@@ -28,8 +28,8 @@
 
         header { text-align: center; margin-bottom: 20px; }
         .logo-tag { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--accent-cyan); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
-        h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 2rem; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00f5a0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+        h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.9rem; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00f5a0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p.subtitle { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; }
 
         .panel { display: none; animation: fadeIn 0.3s ease-in-out; }
         .panel.active { display: block; }
@@ -59,11 +59,11 @@
         .game-wrapper { position: relative; width: 100%; height: 340px; background: #020617; border-radius: 16px; border: 2px solid var(--border-glow); overflow: hidden; margin-bottom: 12px; }
         canvas.game-canvas { width: 100%; height: 100%; display: block; }
         
-        .game-hud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--accent-cyan); pointer-events: none; }
-        .hud-badge { background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.3); }
+        .game-hud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--accent-cyan); pointer-events: none; z-index: 5; }
+        .hud-badge { background: rgba(0,0,0,0.85); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.3); }
 
         .controls-row { display: flex; gap: 10px; margin-top: 8px; }
-        .ctrl-btn { flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: bold; padding: 16px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; text-align: center; user-select: none; }
+        .ctrl-btn { flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: bold; padding: 16px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; text-align: center; user-select: none; touch-action: manipulation; }
         .ctrl-btn:active { background: var(--accent-cyan); color: #000; }
 
         .report-box { background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-glow); border-radius: 16px; padding: 20px; margin-top: 12px; }
@@ -78,9 +78,9 @@
 
 <div class="app-container">
     <header>
-        <div class="logo-tag">NANO GEAR HANGAR</div>
-        <h1>BBB BREAKOUT ARCADE</h1>
-        <p class="subtitle">나노 전달체 옵션을 조합하고 뇌혈관장벽(BBB)에 출격하세요.</p>
+        <div class="logo-tag">PHARMACEUTICS & NANOTECH LAB</div>
+        <h1>BBB BREAKOUT SIMULATOR</h1>
+        <p class="subtitle">나노 전달체를 설계하여 면역 공격을 피하고 뇌 조직에 표적 약물을 전달하세요.</p>
     </header>
 
     <!-- Panel 1: Equipment Hangar -->
@@ -100,7 +100,7 @@
                 <br>
                 <label>표적 조준 리간드</label>
                 <select id="select-ligand" onchange="updateUI()">
-                    <option value="transferrin">트랜스페린 [BBB 자동 자석 / 민첩 -10%]</option>
+                    <option value="transferrin">트랜스페린 [BBB 수용체 인력 / 민첩 -10%]</option>
                     <option value="folate">엽산 (Folate) [회피 부스터 / 자석 기능 없음]</option>
                     <option value="none">기본 전달체 [스탯 변동 없음]</option>
                 </select>
@@ -128,7 +128,7 @@
 
         <!-- Live Stat Gauges -->
         <div class="stat-radar-box">
-            <div style="font-size:0.85rem; font-weight:bold; color:var(--accent-cyan); margin-bottom:8px;">종합 빌드 스탯 실시간 측정</div>
+            <div style="font-size:0.85rem; font-weight:bold; color:var(--accent-cyan); margin-bottom:8px;">설계 나노입자 스탯 측정 결과</div>
             <div class="stat-row">
                 <span>내구도 / 체력 (HP)</span>
                 <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hp"></div></div>
@@ -147,24 +147,24 @@
             </div>
         </div>
 
-        <button class="btn" onclick="startArcadeGame()">뇌혈관장벽(BBB) 침투 출격</button>
+        <button class="btn" onclick="startArcadeGame()">체내 투여 및 뇌혈관장벽(BBB) 침투 시작</button>
     </div>
 
     <!-- Panel 2: Arcade Game -->
     <div class="panel" id="panel-2">
         <div class="game-wrapper">
             <div class="game-hud">
-                <div class="hud-badge">체력(HP): <span id="hud-hp" style="color:var(--accent-green)">100</span></div>
-                <div class="hud-badge">남은 거리: <span id="hud-dist" style="color:var(--accent-cyan)">30m</span></div>
+                <div class="hud-badge">약물 잔여량(HP): <span id="hud-hp" style="color:var(--accent-green)">100</span></div>
+                <div class="hud-badge">도달 남은 거리: <span id="hud-dist" style="color:var(--accent-cyan)">50m</span></div>
             </div>
             <canvas id="game-canvas" class="game-canvas"></canvas>
         </div>
 
         <div class="controls-row">
-            <div class="ctrl-btn" id="btn-up">위로 이동</div>
-            <div class="ctrl-btn" id="btn-down">아래로 이동</div>
+            <div class="ctrl-btn" id="btn-up">▲ 위로 이동</div>
+            <div class="ctrl-btn" id="btn-down">▼ 아래로 이동</div>
         </div>
-        <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:6px;">버튼을 누르고 있으면 연속 이동합니다. (키보드 방향키 지원)</p>
+        <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:6px;">버튼을 누르고 있으면 세밀하게 미세 조정 이동합니다.</p>
     </div>
 
     <!-- Panel 3: Results & PK Report -->
@@ -173,17 +173,20 @@
 
         <div class="control-group">
             <h3>체내 약물 혈중 농도 곡선 (PK Curve)</h3>
-            <div class="game-wrapper" style="height: 180px;">
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">
+                그래프의 초록색 영역은 독성이 생기지 않고 치료 효과만 나타나는 '치료 유효 농도 구간'입니다.
+            </p>
+            <div class="game-wrapper" style="height: 190px;">
                 <canvas id="pk-canvas" class="game-canvas"></canvas>
             </div>
         </div>
 
         <div class="report-box">
-            <h3>조합 및 약동학 분석 리포트</h3>
+            <h3>약동학적(PK) 효능 분석 리포트</h3>
             <p id="report-text"></p>
         </div>
 
-        <button class="btn" onclick="goToStep(1)">격납고로 돌아가기</button>
+        <button class="btn" onclick="goToStep(1)">새로운 나노입자 설계하러 가기</button>
     </div>
 </div>
 
@@ -208,16 +211,16 @@
         document.getElementById('disp-logp').innerText = logp.toFixed(1);
 
         let baseHp = 100 + (size - 30) * 0.4;
-        let baseSpeed = 4.5 + (logp * 0.4);
+        let baseSpeed = 4.0 + (logp * 0.3);
         let baseStealth = 50 - Math.abs(zeta + 15) * 0.8;
         let baseMagnet = 30;
 
-        if (matrix === 'peg-lipo') { baseStealth += 30; baseSpeed -= 0.5; }
+        if (matrix === 'peg-lipo') { baseStealth += 30; baseSpeed -= 0.4; }
         if (matrix === 'hydrogel') { baseHp += 50; baseMagnet -= 15; }
-        if (matrix === 'plga') { baseSpeed += 1.8; baseStealth -= 10; }
+        if (matrix === 'plga') { baseSpeed += 1.5; baseStealth -= 10; }
 
-        if (ligand === 'transferrin') { baseMagnet += 55; baseSpeed -= 0.4; }
-        if (ligand === 'folate') { baseSpeed += 1.2; baseMagnet += 5; }
+        if (ligand === 'transferrin') { baseMagnet += 55; baseSpeed -= 0.3; }
+        if (ligand === 'folate') { baseSpeed += 1.0; baseMagnet += 5; }
 
         calculatedStats = {
             hp: Math.floor(baseHp),
@@ -251,8 +254,8 @@
 
     let player = { x: 60, y: 150, vy: 0, hp: 100, maxHp: 100 };
     let obstacles = [];
-    let goalDistance = 450;
-    let distanceTraveled = 0;
+    let totalDistance = 500;
+    let currentDistance = 500;
     let goalX = 9999;
     let isGameOver = false;
 
@@ -294,16 +297,19 @@
         player.vy = 0;
         player.hp = calculatedStats.hp;
         player.maxHp = calculatedStats.hp;
-        distanceTraveled = 0;
-        goalX = canvas.width + 100;
+        
+        totalDistance = 500;
+        currentDistance = 500;
+        goalX = canvas.width + 150;
+        
         obstacles = [];
-
-        for(let i=0; i<5; i++) {
+        // 대식세포 수량 8개로 증원
+        for(let i=0; i<8; i++) {
             obstacles.push({
-                x: 300 + i * 150 + Math.random() * 30,
+                x: 250 + i * 110 + Math.random() * 30,
                 y: 40 + Math.random() * (canvas.height - 80),
-                radius: 16 + Math.random() * 5,
-                vy: (Math.random() - 0.5) * 1.5
+                radius: 15 + Math.random() * 6,
+                vy: (Math.random() - 0.5) * 1.6
             });
         }
 
@@ -311,35 +317,44 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            let accel = calculatedStats.speed * 0.85;
+            // 조작 감도 대폭 정밀화 (부드러운 미세 조종)
+            let accel = calculatedStats.speed * 0.35;
             if (keyState.up) player.vy -= accel;
             if (keyState.down) player.vy += accel;
 
             player.y += player.vy;
-            player.vy *= 0.82;
+            player.vy *= 0.85;
 
             if (player.y < 25) { player.y = 25; player.vy = 0; }
             if (player.y > canvas.height - 25) { player.y = canvas.height - 25; player.vy = 0; }
 
-            distanceTraveled += 3.5;
-            let remainingDist = Math.max(0, Math.floor((goalDistance - distanceTraveled) / 15));
-            document.getElementById('hud-dist').innerText = remainingDist + 'm';
+            // 남은 거리 감소 로직
+            if (currentDistance > 0) {
+                currentDistance -= 1.8;
+                if (currentDistance < 0) currentDistance = 0;
+            }
+            
+            let displayMeters = Math.ceil(currentDistance / 10);
+            document.getElementById('hud-dist').innerText = displayMeters + 'm';
             document.getElementById('hud-hp').innerText = `${Math.max(0, Math.floor(player.hp))} / ${player.maxHp}`;
 
+            // 혈관 벽 렌더링
             ctx.fillStyle = '#1e293b';
             ctx.fillRect(0, 0, canvas.width, 15);
             ctx.fillRect(0, canvas.height - 15, canvas.width, 15);
 
+            // 플레이어 나노입자
             ctx.beginPath();
             ctx.fillStyle = '#00f2fe';
             ctx.shadowColor = '#00f2fe';
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = 10;
             ctx.arc(player.x, player.y, calculatedStats.radius, 0, Math.PI*2);
             ctx.fill();
             ctx.shadowBlur = 0;
 
+            // 대식세포 장애물
             obstacles.forEach(obs => {
-                obs.x -= 2.5;
+                obs.x -= 2.2;
                 obs.y += obs.vy;
                 if (obs.y < 35 || obs.y > canvas.height - 35) obs.vy *= -1;
 
@@ -350,7 +365,7 @@
 
                 let dist = Math.hypot(player.x - obs.x, player.y - obs.y);
                 if (dist < calculatedStats.radius + obs.radius) {
-                    let dmg = (100 - calculatedStats.stealth) * 0.08;
+                    let dmg = (100 - calculatedStats.stealth) * 0.07;
                     player.hp -= dmg;
                     ctx.fillStyle = 'rgba(255, 75, 43, 0.6)';
                 } else {
@@ -365,12 +380,10 @@
                 ctx.stroke();
             });
 
-            // BBB Wall Goal Entry
-            if (remainingDist <= 0) {
-                if (goalX > canvas.width - 70) {
-                    goalX -= 3;
-                } else {
-                    goalX -= 1.5;
+            // 남은 거리 0m 도달 시 BBB 관문 출현
+            if (currentDistance <= 0) {
+                if (goalX > canvas.width - 65) {
+                    goalX -= 3.5;
                 }
 
                 ctx.fillStyle = '#00f5a0';
@@ -382,7 +395,7 @@
                 let pullForce = (calculatedStats.magnet / 100) * 0.15;
                 player.y += (canvas.height/2 - player.y) * pullForce;
 
-                if (goalX <= player.x + calculatedStats.radius + 15) {
+                if (goalX <= player.x + calculatedStats.radius + 10) {
                     endGame(true);
                     return;
                 }
@@ -416,14 +429,15 @@
             else rank = 'B';
         }
 
-        rankText.innerText = `RANK ${rank}`;
+        rankText.innerText = `EVALUATION: RANK ${rank}`;
         rankText.style.color = rank === 'S' ? '#00f5a0' : (rank === 'F' ? '#ff4b2b' : '#00f2fe');
 
         reportText.innerHTML = isSuccess ? 
-            `<b>뇌혈관장벽(BBB) 침투 성공 (잔여 체력: ${hpPercent}%)</b><br>
-            조합하신 ${matrix.toUpperCase()} 커스텀 장비와 ${ligand.toUpperCase()} 표적 리간드의 조화로 면역 공격을 무사히 이겨내고 뇌 신경 세포 수용체 도킹에 성공했습니다.` :
-            `<b>체력 고갈로 미션 실패</b><br>
-            면역세포의 공격으로 체력이 다했습니다. 격납고로 돌아가 [PEG화 리포솜]으로 스텔스력을 높이거나 [pH 하이드로겔]로 최대 체력을 보강해 보세요.`;
+            `<b>뇌혈관장벽(BBB) 침투 성공 (생존 약물량: ${hpPercent}%)</b><br>
+            면역세포 분해 공격을 극복하고 표적 신경세포 도킹에 성공했습니다.<br>
+            하단의 PK 그래프 분석 결과, 전달된 약물 농도가 독성 범위를 넘지 않으면서 <b>'치료 유효 농도 구간(초록색 띠)'</b>에 안착하여 안전한 약 효능을 발휘하는 것으로 확인되었습니다.` :
+            `<b>체력 고갈로 인한 투여 실패</b><br>
+            피 속에서 면역세포 공격으로 나노입자가 조기 파괴되어 뇌 조직에 약물이 전달되지 못했습니다. [PEG화 리포솜]으로 스텔스 능력을 보강해 다시 시도하세요.`;
 
         renderPKGraph(hpPercent);
     }
@@ -436,6 +450,7 @@
 
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
+        // 축 그리기
         ctx.strokeStyle = '#334155';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -443,18 +458,26 @@
         ctx.lineTo(canvas.width - 20, canvas.height - 30);
         ctx.stroke();
 
-        ctx.fillStyle = 'rgba(0, 245, 160, 0.08)';
-        ctx.fillRect(40, 40, canvas.width - 60, 50);
+        // 독성 영역 (상단)
+        ctx.fillStyle = 'rgba(255, 75, 43, 0.08)';
+        ctx.fillRect(40, 20, canvas.width - 60, 25);
+        ctx.fillStyle = '#ff4b2b';
+        ctx.font = '10px Pretendard';
+        ctx.fillText('부작용 위험 독성 구간', 45, 36);
 
+        // 치료 유효 농도 구간 (중앙)
+        ctx.fillStyle = 'rgba(0, 245, 160, 0.12)';
+        ctx.fillRect(40, 45, canvas.width - 60, 45);
         ctx.fillStyle = '#00f5a0';
         ctx.font = '10px Pretendard';
-        ctx.fillText('치료 유효 농도 구간 (Therapeutic Window)', 50, 35);
+        ctx.fillText('치료 유효 농도 구간 (Therapeutic Window)', 45, 60);
 
+        // PK 곡선 (배트맨 방정식 시각화)
         ctx.strokeStyle = hpPercent > 0 ? '#00f2fe' : '#ff4b2b';
         ctx.lineWidth = 3;
         ctx.beginPath();
 
-        let maxPeak = (hpPercent / 100) * 130;
+        let maxPeak = (hpPercent / 100) * 110;
         for(let t = 0; t < canvas.width - 60; t++) {
             let timeVal = t * 0.08;
             let conc = maxPeak * (Math.exp(-0.1 * timeVal) - Math.exp(-0.8 * timeVal));
