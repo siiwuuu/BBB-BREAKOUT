@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBB Breakout: Nano DDS Hangar Game</title>
+    <title>Nano DDS & BBB Breakout Simulator</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Pretendard:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -24,7 +24,7 @@
 
         #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.2; pointer-events: none; }
 
-        .app-container { width: 100%; max-width: 940px; background: var(--panel-bg); backdrop-filter: blur(16px); border: 1px solid var(--border-glow); border-radius: 24px; padding: 28px; box-shadow: 0 0 50px rgba(0, 242, 254, 0.15); }
+        .app-container { position: relative; width: 100%; max-width: 940px; background: var(--panel-bg); backdrop-filter: blur(16px); border: 1px solid var(--border-glow); border-radius: 24px; padding: 28px; box-shadow: 0 0 50px rgba(0, 242, 254, 0.15); overflow: hidden; }
 
         header { text-align: center; margin-bottom: 20px; }
         .logo-tag { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--accent-cyan); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
@@ -55,21 +55,32 @@
 
         .btn { width: 100%; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; font-family: 'Orbitron', sans-serif; font-weight: 700; border: none; padding: 16px; border-radius: 12px; font-size: 1rem; cursor: pointer; transition: 0.2s; box-shadow: 0 0 20px rgba(0, 242, 254, 0.3); margin-top: 10px; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 242, 254, 0.5); }
+        .btn-outline { background: rgba(15, 23, 42, 0.8); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: none; }
+        .btn-outline:hover { background: var(--accent-cyan); color: #000; }
 
         .game-wrapper { position: relative; width: 100%; height: 340px; background: #020617; border-radius: 16px; border: 2px solid var(--border-glow); overflow: hidden; margin-bottom: 12px; }
         canvas.game-canvas { width: 100%; height: 100%; display: block; }
         
-        .game-hud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--accent-cyan); pointer-events: none; z-index: 5; }
+        .game-hud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--accent-cyan); pointer-events: none; z-index: 10; }
         .hud-badge { background: rgba(0,0,0,0.85); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(0,242,254,0.3); }
 
         .controls-row { display: flex; gap: 10px; margin-top: 8px; }
-        .ctrl-btn { flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: bold; padding: 16px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; text-align: center; user-select: none; touch-action: manipulation; }
+        .ctrl-btn { flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: bold; padding: 16px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; text-align: center; user-select: none; touch-action: manipulation; transition: background 0.1s; }
         .ctrl-btn:active { background: var(--accent-cyan); color: #000; }
 
         .report-box { background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-glow); border-radius: 16px; padding: 20px; margin-top: 12px; }
         .report-box h3 { color: var(--accent-green); font-size: 1.05rem; margin-bottom: 10px; }
         .report-box p { font-size: 0.9rem; line-height: 1.6; color: #e2e8f0; }
         .rank-badge { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; font-weight: 900; color: var(--accent-green); text-align: center; margin: 10px 0; }
+
+        /* Tutorial Modal */
+        .modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.95); z-index: 50; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease-in-out; }
+        .modal-content { background: #0f172a; border: 1px solid var(--accent-cyan); border-radius: 16px; padding: 24px; max-width: 600px; width: 100%; }
+        .modal-content h2 { color: var(--accent-cyan); margin-bottom: 16px; font-size: 1.3rem; border-bottom: 1px solid rgba(0,242,254,0.2); padding-bottom: 8px; }
+        .modal-content h3 { color: var(--accent-green); margin-top: 16px; margin-bottom: 8px; font-size: 1.05rem; }
+        .modal-content p, .modal-content li { font-size: 0.9rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 6px; }
+        .modal-content ul { margin-left: 20px; margin-bottom: 16px; }
     </style>
 </head>
 <body>
@@ -77,40 +88,53 @@
 <canvas id="bg-canvas"></canvas>
 
 <div class="app-container">
-    <header>
-        <div class="logo-tag">PHARMACEUTICS & NANOTECH LAB</div>
-        <h1>BBB BREAKOUT SIMULATOR</h1>
-        <p class="subtitle">나노 전달체를 설계하여 면역 공격을 피하고 뇌 조직에 표적 약물을 전달하세요.</p>
-    </header>
+
+    <!-- Panel 0: Home / Title Screen -->
+    <div class="panel active" id="panel-0" style="text-align: center; padding: 60px 20px;">
+        <div class="logo-tag" style="font-size: 1.1rem; margin-bottom: 10px;">PHARMACEUTICS & NANOTECH LAB</div>
+        <h1 style="font-size: 3rem; margin: 20px 0; letter-spacing: 2px;">BBB BREAKOUT</h1>
+        <p class="subtitle" style="font-size: 1.05rem; margin-bottom: 50px;">뇌혈관장벽(BBB) 투과 약물 전달체 설계 및 약동학 실증 시뮬레이터</p>
+        
+        <div style="max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+            <button class="btn" style="font-size: 1.2rem; padding: 20px;" onclick="goToStep(1)">GAME START (연구소 입장)</button>
+            <button class="btn btn-outline" onclick="toggleModal(true)">프로그램 목적 및 조작법 (HOW TO PLAY)</button>
+        </div>
+    </div>
 
     <!-- Panel 1: Equipment Hangar -->
-    <div class="panel active" id="panel-1">
+    <div class="panel" id="panel-1">
+        <header>
+            <div class="logo-tag">STEP 1. NANO PARTICLE DESIGN</div>
+            <h1>약물 전달체(Nano DDS) 설계</h1>
+            <p class="subtitle">나노입자의 소재와 물리화학적 물성을 조합하여 최적의 전달체를 빌드하십시오.</p>
+        </header>
+
         <div class="grid-2">
             <div class="control-group">
-                <h3>1. 제형 및 표적 선택</h3>
+                <h3>1. 제형 및 표적 리간드 선택</h3>
                 
-                <label>고분자 제형 소재</label>
+                <label>고분자 제형 소재 (Matrix)</label>
                 <select id="select-matrix" onchange="updateUI()">
-                    <option value="peg-lipo">PEG화 리포솜 [스텔스 특화 / 속도 -10%]</option>
-                    <option value="hydrogel">pH 하이드로겔 [최대 체력 +50 / 자석 -20%]</option>
-                    <option value="plga">PLGA 고분자 [이동 스피드 +30% / 회피 -10%]</option>
+                    <option value="peg-lipo">PEG화 리포솜 [스텔스(면역회피) 특화]</option>
+                    <option value="hydrogel">pH 하이드로겔 [최대 약물 탑재량 증가]</option>
+                    <option value="plga">PLGA 고분자 [혈류 순환 속도 증가]</option>
                 </select>
                 <div class="info-card" id="info-matrix"></div>
                 
                 <br>
-                <label>표적 조준 리간드</label>
+                <label>표적 조준 리간드 (Ligand)</label>
                 <select id="select-ligand" onchange="updateUI()">
-                    <option value="transferrin">트랜스페린 [BBB 수용체 인력 / 민첩 -10%]</option>
-                    <option value="folate">엽산 (Folate) [회피 부스터 / 자석 기능 없음]</option>
-                    <option value="none">기본 전달체 [스탯 변동 없음]</option>
+                    <option value="transferrin">트랜스페린 [BBB 수용체 결합력 극대화]</option>
+                    <option value="folate">엽산 (Folate) [혈류 내 상하 이동 민첩성 증가]</option>
+                    <option value="none">기본 전달체 (Non-targeting) [스탯 변동 없음]</option>
                 </select>
                 <div class="info-card" id="info-ligand"></div>
             </div>
 
             <div class="control-group">
-                <h3>2. 코어 물성 튜닝</h3>
+                <h3>2. 코어 물성 튜닝 (Physicochemical)</h3>
                 
-                <label>입자 크기 <span class="val-disp" id="disp-size">80 nm</span></label>
+                <label>입자 크기 (Size) <span class="val-disp" id="disp-size">80 nm</span></label>
                 <input type="range" id="input-size" min="30" max="150" value="80" oninput="updateUI()">
                 <div class="info-card" id="info-size"></div>
                 
@@ -120,7 +144,7 @@
                 <div class="info-card" id="info-zeta"></div>
 
                 <br>
-                <label>지용성 지수 (LogP) <span class="val-disp" id="disp-logp">3.2</span></label>
+                <label>지용성 분배계수 (LogP) <span class="val-disp" id="disp-logp">3.2</span></label>
                 <input type="range" id="input-logp" min="1.0" max="5.0" step="0.1" value="3.2" oninput="updateUI()">
                 <div class="info-card" id="info-logp"></div>
             </div>
@@ -130,51 +154,61 @@
         <div class="stat-radar-box">
             <div style="font-size:0.85rem; font-weight:bold; color:var(--accent-cyan); margin-bottom:8px;">설계 나노입자 스탯 측정 결과</div>
             <div class="stat-row">
-                <span>내구도 / 체력 (HP)</span>
+                <span>약물 탑재량 (Max Capacity)</span>
                 <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hp"></div></div>
             </div>
             <div class="stat-row">
-                <span>기체 민첩성 (Speed)</span>
+                <span>혈류 순환 속도 (Circulation Velocity)</span>
                 <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-speed"></div></div>
             </div>
             <div class="stat-row">
-                <span>면역 회피력 (Stealth)</span>
+                <span>면역 회피능 (Immune Stealth)</span>
                 <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-stealth"></div></div>
             </div>
             <div class="stat-row">
-                <span>BBB 표적 인력 (Magnet)</span>
+                <span>BBB 수용체 결합력 (Receptor Affinity)</span>
                 <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-magnet"></div></div>
             </div>
         </div>
 
-        <button class="btn" onclick="startArcadeGame()">체내 투여 및 뇌혈관장벽(BBB) 침투 시작</button>
+        <button class="btn" onclick="startArcadeGame()">체내 정맥 투여 및 시뮬레이션 시작</button>
     </div>
 
     <!-- Panel 2: Arcade Game -->
     <div class="panel" id="panel-2">
+        <header style="margin-bottom: 12px;">
+            <div class="logo-tag">STEP 2. IN VIVO CIRCULATION</div>
+            <h1 style="font-size: 1.4rem;">전신 혈류 순환 및 면역 회피</h1>
+        </header>
+        
         <div class="game-wrapper">
             <div class="game-hud">
-                <div class="hud-badge">약물 잔여량(HP): <span id="hud-hp" style="color:var(--accent-green)">100</span></div>
-                <div class="hud-badge">도달 남은 거리: <span id="hud-dist" style="color:var(--accent-cyan)">50m</span></div>
+                <div class="hud-badge">잔여 약물량: <span id="hud-hp" style="color:var(--accent-green)">100</span></div>
+                <div class="hud-badge">BBB 도달까지 거리: <span id="hud-dist" style="color:var(--accent-cyan)">500 μm</span></div>
             </div>
             <canvas id="game-canvas" class="game-canvas"></canvas>
         </div>
 
         <div class="controls-row">
-            <div class="ctrl-btn" id="btn-up">▲ 위로 이동</div>
-            <div class="ctrl-btn" id="btn-down">▼ 아래로 이동</div>
+            <div class="ctrl-btn" id="btn-up">상승 (Up)</div>
+            <div class="ctrl-btn" id="btn-down">하강 (Down)</div>
         </div>
-        <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:6px;">버튼을 누르고 있으면 세밀하게 미세 조정 이동합니다.</p>
+        <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:6px;">버튼을 누르고 있으면 부드럽게 연속 이동합니다. 혈류 내 면역 대식세포(빨간색)를 회피하세요.</p>
     </div>
 
     <!-- Panel 3: Results & PK Report -->
     <div class="panel" id="panel-3">
+        <header style="margin-bottom: 16px;">
+            <div class="logo-tag">STEP 3. PHARMACOKINETICS ANALYSIS</div>
+            <h1 style="font-size: 1.6rem;">약동학(PK) 효능 평가 결과</h1>
+        </header>
+
         <div class="rank-badge" id="rank-text">RANK S</div>
 
         <div class="control-group">
             <h3>체내 약물 혈중 농도 곡선 (PK Curve)</h3>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">
-                그래프의 초록색 영역은 독성이 생기지 않고 치료 효과만 나타나는 '치료 유효 농도 구간'입니다.
+                그래프의 초록색 띠 영역은 독성 부작용 없이 치료 효과만 나타나는 '치료 유효 농도 구간(Therapeutic Window)'입니다.
             </p>
             <div class="game-wrapper" style="height: 190px;">
                 <canvas id="pk-canvas" class="game-canvas"></canvas>
@@ -182,22 +216,53 @@
         </div>
 
         <div class="report-box">
-            <h3>약동학적(PK) 효능 분석 리포트</h3>
+            <h3>종합 분석 리포트</h3>
             <p id="report-text"></p>
         </div>
 
-        <button class="btn" onclick="goToStep(1)">새로운 나노입자 설계하러 가기</button>
+        <button class="btn" onclick="goToStep(1)">새로운 나노입자 재설계하기</button>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div class="modal-overlay" id="modal-tutorial">
+        <div class="modal-content">
+            <h2>시뮬레이터 목적 및 조작법</h2>
+            
+            <h3>1. 프로그램 목적 (Why we play)</h3>
+            <p>이 시뮬레이터는 혈관 내에 투여된 <b>'나노 약물 전달체(Nano DDS)'</b>가 체내 면역 세포의 방어를 뚫고 최종 목적지인 <b>뇌혈관장벽(BBB)</b>에 안전하게 약물을 도달시키는 과정을 실험하는 과학적 실증 모델입니다.</p>
+            
+            <h3>2. 진행 과정 (Phases)</h3>
+            <ul>
+                <li><b>설계(Design):</b> 입자의 크기, 전하, 소재를 조합하여 약물 전달체의 물성을 결정합니다.</li>
+                <li><b>투여(Circulation):</b> 혈류를 따라 이동하며 대식세포(Macrophage)의 식세포 작용을 피해 BBB까지 생존해야 합니다.</li>
+                <li><b>평가(PK Analysis):</b> 약물이 무사히 도달했는지, 그리고 농도가 '치료 유효 농도(초록색 영역)' 내에 안착하여 독성 없이 효능을 발휘하는지 약동학 그래프로 분석합니다.</li>
+            </ul>
+
+            <h3>3. 조작법 (Controls)</h3>
+            <p>투여(STEP 2) 단계가 시작되면 하단의 <b>[상승 (Up)]</b> / <b>[하강 (Down)]</b> 버튼을 누르거나 키보드 <b>위/아래 방향키</b>를 사용하여 다가오는 붉은색 대식세포를 피하십시오. 버튼을 길게 누르면 부드럽게 가속하여 이동합니다.</p>
+
+            <button class="btn" style="margin-top: 20px;" onclick="toggleModal(false)">확인 및 닫기</button>
+        </div>
     </div>
 </div>
 
 <script>
-    let currentStep = 1;
+    let currentStep = 0;
     let gameAnimId = null;
 
+    // Default Stats
     let size = 80, zeta = -15, logp = 3.2;
     let matrix = 'peg-lipo', ligand = 'transferrin';
-
     let calculatedStats = { hp: 100, speed: 5, stealth: 50, magnet: 50, radius: 8 };
+
+    function toggleModal(show) {
+        const modal = document.getElementById('modal-tutorial');
+        if (show) {
+            modal.classList.add('active');
+        } else {
+            modal.classList.remove('active');
+        }
+    }
 
     function updateUI() {
         size = parseInt(document.getElementById('input-size').value);
@@ -210,6 +275,7 @@
         document.getElementById('disp-zeta').innerText = (zeta > 0 ? '+' : '') + zeta + ' mV';
         document.getElementById('disp-logp').innerText = logp.toFixed(1);
 
+        // 스탯 계산 로직
         let baseHp = 100 + (size - 30) * 0.4;
         let baseSpeed = 4.0 + (logp * 0.3);
         let baseStealth = 50 - Math.abs(zeta + 15) * 0.8;
@@ -235,15 +301,16 @@
         document.getElementById('bar-stealth').style.width = calculatedStats.stealth + '%';
         document.getElementById('bar-magnet').style.width = calculatedStats.magnet + '%';
 
-        document.getElementById('info-matrix').innerHTML = matrix === 'peg-lipo' ? '장점: 면역 충격 데미지 30% 감소 / 단점: 속도 소폭 감소' :
-            (matrix === 'hydrogel' ? '장점: 최대 체력(HP) +50 증가 / 단점: BBB 끌림 약화' : '장점: 이동 스피드 +30% 증가 / 단점: 면역 피격 범위 증가');
+        // 용어 업데이트
+        document.getElementById('info-matrix').innerHTML = matrix === 'peg-lipo' ? '장점: 면역 대식세포 식균 데미지 30% 감소' :
+            (matrix === 'hydrogel' ? '장점: 초기 탑재 약물량(Max HP) 대폭 증가' : '장점: 혈류 내 이동 속도 +30% 증가 (회피 용이)');
 
-        document.getElementById('info-ligand').innerHTML = ligand === 'transferrin' ? '장점: BBB 도착 시 자동 끌당 자석 작용 / 단점: 민첩성 약간 감소' :
-            (ligand === 'folate' ? '장점: 상하 이동 민첩 부스터 / 단점: 골인 지점 자석 없음' : '특징: 기본 스탯 유지는 되지만 특수 기능 없음');
+        document.getElementById('info-ligand').innerHTML = ligand === 'transferrin' ? '장점: 뇌혈관장벽(BBB) 근접 시 자동 도킹 인력 발생' :
+            (ligand === 'folate' ? '장점: 상하 조향 민첩성 증가 (자석 기능 없음)' : '특징: 특수 수용체 결합력 없음 (기본 상태)');
 
-        document.getElementById('info-size').innerHTML = `크기 ${size}nm (크면 체력 증가, 작으면 적의 공격을 피하기 쉬움)`;
-        document.getElementById('info-zeta').innerHTML = `제타전위 ${zeta}mV (음전하가 적절해야 표면 반발력으로 안정적 분산)`;
-        document.getElementById('info-logp').innerHTML = `LogP ${logp.toFixed(1)} (지용성이 적절해야 세포막 투과속도가 상승)`;
+        document.getElementById('info-size').innerHTML = `입경 ${size}nm (클수록 탑재량 증가, 작을수록 면역 회피 유리)`;
+        document.getElementById('info-zeta').innerHTML = `제타전위 ${zeta}mV (음전하가 안정적이어야 단백질 흡착 최소화)`;
+        document.getElementById('info-logp').innerHTML = `LogP ${logp.toFixed(1)} (지용성이 적절해야 세포막 투과율 상승)`;
     }
 
     function goToStep(step) {
@@ -252,6 +319,7 @@
         document.getElementById(`panel-${step}`).classList.add(`active`);
     }
 
+    // 게임 로직 변수
     let player = { x: 60, y: 150, vy: 0, hp: 100, maxHp: 100 };
     let obstacles = [];
     let totalDistance = 500;
@@ -261,6 +329,7 @@
 
     let keyState = { up: false, down: false };
 
+    // 조작 이벤트 바인딩
     const btnUp = document.getElementById('btn-up');
     const btnDown = document.getElementById('btn-down');
 
@@ -292,24 +361,25 @@
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
 
+        // 플레이어 초기화
         player.x = 60;
         player.y = canvas.height / 2;
         player.vy = 0;
         player.hp = calculatedStats.hp;
         player.maxHp = calculatedStats.hp;
         
+        // 거리 및 골인 지점 초기화
         totalDistance = 500;
         currentDistance = 500;
-        goalX = canvas.width + 150;
+        goalX = canvas.width + 50; 
         
         obstacles = [];
-        // 대식세포 수량 8개로 증원
         for(let i=0; i<8; i++) {
             obstacles.push({
                 x: 250 + i * 110 + Math.random() * 30,
                 y: 40 + Math.random() * (canvas.height - 80),
-                radius: 15 + Math.random() * 6,
-                vy: (Math.random() - 0.5) * 1.6
+                radius: 14 + Math.random() * 6,
+                vy: (Math.random() - 0.5) * 1.8
             });
         }
 
@@ -317,33 +387,34 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 조작 감도 대폭 정밀화 (부드러운 미세 조종)
-            let accel = calculatedStats.speed * 0.35;
+            // [조작감 개선 로직] 가속도와 마찰력 밸런스 조정
+            let accel = calculatedStats.speed * 0.5; // 기존 0.35에서 상향 (답답함 해소)
             if (keyState.up) player.vy -= accel;
             if (keyState.down) player.vy += accel;
 
             player.y += player.vy;
-            player.vy *= 0.85;
+            player.vy *= 0.88; // 마찰력 조정 (부드럽게 멈춤)
 
             if (player.y < 25) { player.y = 25; player.vy = 0; }
             if (player.y > canvas.height - 25) { player.y = canvas.height - 25; player.vy = 0; }
 
-            // 남은 거리 감소 로직
+            // [거리 차감 로직]
             if (currentDistance > 0) {
-                currentDistance -= 1.8;
+                currentDistance -= (calculatedStats.speed * 0.4);
                 if (currentDistance < 0) currentDistance = 0;
             }
             
-            let displayMeters = Math.ceil(currentDistance / 10);
-            document.getElementById('hud-dist').innerText = displayMeters + 'm';
+            // HUD 업데이트 (거리 단위를 마이크로미터로 설정)
+            let displayMeters = Math.ceil(currentDistance);
+            document.getElementById('hud-dist').innerText = displayMeters + ' μm';
             document.getElementById('hud-hp').innerText = `${Math.max(0, Math.floor(player.hp))} / ${player.maxHp}`;
 
-            // 혈관 벽 렌더링
+            // 혈관 상하단 렌더링
             ctx.fillStyle = '#1e293b';
             ctx.fillRect(0, 0, canvas.width, 15);
             ctx.fillRect(0, canvas.height - 15, canvas.width, 15);
 
-            // 플레이어 나노입자
+            // 플레이어(나노입자) 렌더링
             ctx.beginPath();
             ctx.fillStyle = '#00f2fe';
             ctx.shadowColor = '#00f2fe';
@@ -352,20 +423,20 @@
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // 대식세포 장애물
+            // 장애물(대식세포) 이동 및 충돌 판정
             obstacles.forEach(obs => {
-                obs.x -= 2.2;
+                obs.x -= 2.5; // 다가오는 속도
                 obs.y += obs.vy;
                 if (obs.y < 35 || obs.y > canvas.height - 35) obs.vy *= -1;
 
-                if (obs.x < -30) {
+                if (obs.x < -30 && currentDistance > 0) {
                     obs.x = canvas.width + 30 + Math.random()*60;
                     obs.y = 40 + Math.random() * (canvas.height - 80);
                 }
 
                 let dist = Math.hypot(player.x - obs.x, player.y - obs.y);
                 if (dist < calculatedStats.radius + obs.radius) {
-                    let dmg = (100 - calculatedStats.stealth) * 0.07;
+                    let dmg = (100 - calculatedStats.stealth) * 0.08;
                     player.hp -= dmg;
                     ctx.fillStyle = 'rgba(255, 75, 43, 0.6)';
                 } else {
@@ -380,27 +451,34 @@
                 ctx.stroke();
             });
 
-            // 남은 거리 0m 도달 시 BBB 관문 출현
+            // [버그 수정됨] 남은 거리가 0이 되면 BBB 관문이 왼쪽으로 이동해 옴
             if (currentDistance <= 0) {
-                if (goalX > canvas.width - 65) {
-                    goalX -= 3.5;
-                }
+                goalX -= (calculatedStats.speed * 0.7); // 벽이 다가오는 속도
 
+                // 관문 그리기
+                ctx.fillStyle = 'rgba(0, 245, 160, 0.2)';
+                ctx.fillRect(goalX, 15, canvas.width - goalX, canvas.height - 30);
+                
                 ctx.fillStyle = '#00f5a0';
-                ctx.fillRect(goalX, 15, 40, canvas.height - 30);
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 12px Orbitron';
-                ctx.fillText('BBB', goalX + 6, canvas.height / 2);
+                ctx.fillRect(goalX, 15, 8, canvas.height - 30);
+                
+                ctx.fillStyle = '#00f5a0';
+                ctx.font = 'bold 16px Orbitron';
+                ctx.fillText('BBB Receptor', goalX + 16, canvas.height / 2);
 
-                let pullForce = (calculatedStats.magnet / 100) * 0.15;
+                // 트랜스페린 등 리간드 인력 작용
+                let pullForce = (calculatedStats.magnet / 100) * 0.2;
                 player.y += (canvas.height/2 - player.y) * pullForce;
+                player.x += 1.5; // 플레이어도 점진적으로 전진
 
-                if (goalX <= player.x + calculatedStats.radius + 10) {
+                // 벽과 완전히 접촉 시 클리어 판정
+                if (goalX <= player.x + calculatedStats.radius) {
                     endGame(true);
                     return;
                 }
             }
 
+            // 약물 소진 시 게임 오버
             if (player.hp <= 0) {
                 endGame(false);
                 return;
@@ -424,20 +502,20 @@
 
         let rank = 'F';
         if (isSuccess) {
-            if (hpPercent >= 75) rank = 'S';
-            else if (hpPercent >= 45) rank = 'A';
-            else rank = 'B';
+            if (hpPercent >= 75) rank = 'S (Excellent)';
+            else if (hpPercent >= 45) rank = 'A (Good)';
+            else rank = 'B (Normal)';
         }
 
         rankText.innerText = `EVALUATION: RANK ${rank}`;
-        rankText.style.color = rank === 'S' ? '#00f5a0' : (rank === 'F' ? '#ff4b2b' : '#00f2fe');
+        rankText.style.color = rank.includes('S') ? '#00f5a0' : (rank.includes('F') ? '#ff4b2b' : '#00f2fe');
 
         reportText.innerHTML = isSuccess ? 
-            `<b>뇌혈관장벽(BBB) 침투 성공 (생존 약물량: ${hpPercent}%)</b><br>
-            면역세포 분해 공격을 극복하고 표적 신경세포 도킹에 성공했습니다.<br>
-            하단의 PK 그래프 분석 결과, 전달된 약물 농도가 독성 범위를 넘지 않으면서 <b>'치료 유효 농도 구간(초록색 띠)'</b>에 안착하여 안전한 약 효능을 발휘하는 것으로 확인되었습니다.` :
-            `<b>체력 고갈로 인한 투여 실패</b><br>
-            피 속에서 면역세포 공격으로 나노입자가 조기 파괴되어 뇌 조직에 약물이 전달되지 못했습니다. [PEG화 리포솜]으로 스텔스 능력을 보강해 다시 시도하세요.`;
+            `<b>뇌혈관장벽(BBB) 투과 성공 (잔여 약물량: ${hpPercent}%)</b><br>
+            면역 대식세포의 식균 작용을 최소화하고 표적 신경세포 수용체 도킹에 성공했습니다.<br>
+            하단의 약동학(PK) 그래프 분석 결과, 최종 뇌 조직 내 전달된 약물 농도가 부작용(독성) 범위를 넘지 않으면서 <b>'치료 유효 농도 구간(초록색 띠)'</b>에 안착하여 안전한 효능을 발휘하는 것으로 확인되었습니다.` :
+            `<b>혈중 약물 소실(Clearance)로 인한 치료 실패</b><br>
+            혈류 순환 중 면역 대식세포(Macrophage)의 공격으로 나노입자가 조기 붕괴되어 표적 조직에 도달하지 못했습니다. 제형 설계 화면으로 돌아가 [PEG화 리포솜]으로 스텔스(면역 회피능) 성능을 보강해 다시 실험하십시오.`;
 
         renderPKGraph(hpPercent);
     }
@@ -450,7 +528,7 @@
 
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // 축 그리기
+        // 축 렌더링
         ctx.strokeStyle = '#334155';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -458,21 +536,21 @@
         ctx.lineTo(canvas.width - 20, canvas.height - 30);
         ctx.stroke();
 
-        // 독성 영역 (상단)
+        // 독성 구간 (빨간색)
         ctx.fillStyle = 'rgba(255, 75, 43, 0.08)';
         ctx.fillRect(40, 20, canvas.width - 60, 25);
         ctx.fillStyle = '#ff4b2b';
-        ctx.font = '10px Pretendard';
-        ctx.fillText('부작용 위험 독성 구간', 45, 36);
+        ctx.font = '11px Pretendard';
+        ctx.fillText('부작용 위험 독성 구간 (Toxic Level)', 45, 36);
 
-        // 치료 유효 농도 구간 (중앙)
+        // 치료 유효 농도 구간 (초록색)
         ctx.fillStyle = 'rgba(0, 245, 160, 0.12)';
         ctx.fillRect(40, 45, canvas.width - 60, 45);
         ctx.fillStyle = '#00f5a0';
-        ctx.font = '10px Pretendard';
+        ctx.font = '11px Pretendard';
         ctx.fillText('치료 유효 농도 구간 (Therapeutic Window)', 45, 60);
 
-        // PK 곡선 (배트맨 방정식 시각화)
+        // PK 혈중 농도 곡선 렌더링
         ctx.strokeStyle = hpPercent > 0 ? '#00f2fe' : '#ff4b2b';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -490,6 +568,7 @@
         ctx.stroke();
     }
 
+    // 배경 입자 애니메이션
     const bgCanvas = document.getElementById('bg-canvas');
     const bgCtx = bgCanvas.getContext('2d');
     let bgParticles = [];
