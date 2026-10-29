@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBB Breakout: Nano DDS Arcade Game</title>
+    <title>BBB Breakout: Nano DDS Hangar Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Pretendard:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark: #070b14;
-            --panel-bg: rgba(15, 23, 42, 0.88);
+            --panel-bg: rgba(15, 23, 42, 0.9);
             --accent-cyan: #00f2fe;
             --accent-blue: #4facfe;
             --accent-green: #00f5a0;
+            --accent-gold: #ffb703;
             --accent-red: #ff4b2b;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
@@ -23,42 +24,42 @@
 
         #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.2; pointer-events: none; }
 
-        .app-container { width: 100%; max-width: 920px; background: var(--panel-bg); backdrop-filter: blur(16px); border: 1px solid var(--border-glow); border-radius: 24px; padding: 28px; box-shadow: 0 0 50px rgba(0, 242, 254, 0.15); }
+        .app-container { width: 100%; max-width: 940px; background: var(--panel-bg); backdrop-filter: blur(16px); border: 1px solid var(--border-glow); border-radius: 24px; padding: 28px; box-shadow: 0 0 50px rgba(0, 242, 254, 0.15); }
 
         header { text-align: center; margin-bottom: 20px; }
         .logo-tag { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--accent-cyan); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
         h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 2rem; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00f5a0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
 
-        .step-bar { display: flex; justify-content: space-between; margin-bottom: 24px; position: relative; }
-        .step-bar::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.1); z-index: 0; transform: translateY(-50%); }
-        .step-item { position: relative; z-index: 1; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-weight: bold; font-size: 0.85rem; color: var(--text-muted); }
-        .step-item.active { border-color: var(--accent-cyan); color: var(--accent-cyan); box-shadow: 0 0 15px var(--accent-cyan); background: #0f172a; }
-        .step-item.done { border-color: var(--accent-green); color: var(--accent-green); background: #0f172a; }
-
         .panel { display: none; animation: fadeIn 0.3s ease-in-out; }
         .panel.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Hangar Equip Layout */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
 
         .control-group { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 16px; margin-bottom: 12px; }
-        .control-group h3 { font-size: 1rem; color: var(--accent-cyan); margin-bottom: 12px; }
+        .control-group h3 { font-size: 1rem; color: var(--accent-cyan); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
         
         label { display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px; font-weight: 600; }
         select, input[type="range"] { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px; border-radius: 10px; font-size: 0.85rem; outline: none; }
         
         .val-disp { float: right; font-family: 'Orbitron', sans-serif; color: var(--accent-green); font-weight: bold; }
 
-        .info-card { background: rgba(0, 242, 254, 0.06); border-left: 3px solid var(--accent-cyan); padding: 10px 12px; border-radius: 8px; margin-top: 8px; font-size: 0.8rem; line-height: 1.4; color: #cbd5e1; }
-        .info-card b { color: var(--accent-cyan); }
+        /* Stat Radar Gauge Box */
+        .stat-radar-box { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 12px; padding: 12px; margin-top: 10px; }
+        .stat-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 0.8rem; }
+        .stat-bar-bg { width: 60%; background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); width: 50%; transition: width 0.3s; }
 
-        .btn { width: 100%; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; font-family: 'Orbitron', sans-serif; font-weight: 700; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; cursor: pointer; transition: 0.2s; box-shadow: 0 0 20px rgba(0, 242, 254, 0.3); margin-top: 10px; }
+        .info-card { background: rgba(255, 183, 3, 0.08); border-left: 3px solid var(--accent-gold); padding: 8px 10px; border-radius: 6px; margin-top: 6px; font-size: 0.78rem; line-height: 1.4; color: #e2e8f0; }
+
+        .btn { width: 100%; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; font-family: 'Orbitron', sans-serif; font-weight: 700; border: none; padding: 16px; border-radius: 12px; font-size: 1rem; cursor: pointer; transition: 0.2s; box-shadow: 0 0 20px rgba(0, 242, 254, 0.3); margin-top: 10px; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 242, 254, 0.5); }
 
         /* Game Canvas Viewport */
-        .game-wrapper { position: relative; width: 100%; height: 320px; background: #020617; border-radius: 16px; border: 2px solid var(--border-glow); overflow: hidden; margin-bottom: 12px; }
+        .game-wrapper { position: relative; width: 100%; height: 340px; background: #020617; border-radius: 16px; border: 2px solid var(--border-glow); overflow: hidden; margin-bottom: 12px; }
         canvas.game-canvas { width: 100%; height: 100%; display: block; }
         
         .game-hud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--accent-cyan); pointer-events: none; }
@@ -66,7 +67,7 @@
 
         /* Game Touch Controls for iPad */
         .controls-row { display: flex; gap: 10px; margin-top: 8px; }
-        .ctrl-btn { flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: bold; padding: 14px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; text-align: center; user-select: none; }
+        .ctrl-btn { flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: bold; padding: 16px; border-radius: 12px; font-size: 1.2rem; cursor: pointer; text-align: center; user-select: none; }
         .ctrl-btn:active { background: var(--accent-cyan); color: #000; }
 
         .report-box { background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-glow); border-radius: 16px; padding: 20px; margin-top: 12px; }
@@ -81,46 +82,40 @@
 
 <div class="app-container">
     <header>
-        <div class="logo-tag">BBB Breakout Arcade</div>
-        <h1>NANODDS BRAIN TARGETING</h1>
-        <p class="subtitle">면역세포를 피하고 뇌혈관장벽(BBB) 수용체에 약물을 골인시키세요!</p>
+        <div class="logo-tag">NANO GEAR HANGAR</div>
+        <h1>BBB BREAKOUT ARCADE</h1>
+        <p class="subtitle">나노 전달체 아이템을 조합하고 뇌혈관장벽(BBB)에 출격하세요!</p>
     </header>
 
-    <div class="step-bar">
-        <div class="step-item active" id="st-1">1</div>
-        <div class="step-item" id="st-2">2</div>
-        <div class="step-item" id="st-3">3</div>
-    </div>
-
-    <!-- Panel 1: Setup -->
+    <!-- Panel 1: Equipment Hangar -->
     <div class="panel active" id="panel-1">
         <div class="grid-2">
             <div class="control-group">
-                <h3>🧪 1. 전달체 소재 & 열쇠</h3>
+                <h3>🛡️ 1. 장갑/체력 아이템 선택</h3>
                 
-                <label>고분자/지질 제형</label>
+                <label>고분자 제형 소재</label>
                 <select id="select-matrix" onchange="updateUI()">
-                    <option value="peg-lipo">PEG화 리포솜 (스텔스 특화)</option>
-                    <option value="hydrogel">pH-응답성 하이드로겔</option>
-                    <option value="plga">PLGA 생분해성 고분자</option>
+                    <option value="peg-lipo">🛡️ PEG화 리포솜 [스텔스 특화 / 속도 -10%]</option>
+                    <option value="hydrogel">❤️ pH 하이드로겔 [최대 체력 +50 / 자석 -20%]</option>
+                    <option value="plga">⚡ PLGA 고분자 [이동 스피드 +30% / 회피 -10%]</option>
                 </select>
                 <div class="info-card" id="info-matrix"></div>
                 
                 <br>
-                <label>뇌혈관 표적 리간드</label>
+                <label>표적 조준 리간드</label>
                 <select id="select-ligand" onchange="updateUI()">
-                    <option value="transferrin">트랜스페린 (BBB 수용체 표적)</option>
-                    <option value="folate">엽산 (암세포 표적)</option>
-                    <option value="none">비표적 전달체</option>
+                    <option value="transferrin">🧲 트랜스페린 [BBB 자동 자석 / 민첩 -10%]</option>
+                    <option value="folate">🚀 엽산 (Folate) [회피 부스터 / 자석 기능 없음]</option>
+                    <option value="none">⚪ 기본 전달체 [스탯 변동 없음]</option>
                 </select>
                 <div class="info-card" id="info-ligand"></div>
             </div>
 
             <div class="control-group">
-                <h3>📐 2. 물리화학적 규격</h3>
+                <h3>⚙️ 2. 코어 물성 튜닝</h3>
                 
-                <label>입자 크기 (Diameter) <span class="val-disp" id="disp-size">80 nm</span></label>
-                <input type="range" id="input-size" min="20" max="200" value="80" oninput="updateUI()">
+                <label>입자 크기 <span class="val-disp" id="disp-size">80 nm</span></label>
+                <input type="range" id="input-size" min="30" max="150" value="80" oninput="updateUI()">
                 <div class="info-card" id="info-size"></div>
                 
                 <br>
@@ -135,25 +130,46 @@
             </div>
         </div>
 
-        <button class="btn" onclick="startArcadeGame()">🎮 게임 시작! (약물 투여)</button>
+        <!-- Live Stat Gauges -->
+        <div class="stat-radar-box">
+            <div style="font-size:0.85rem; font-weight:bold; color:var(--accent-cyan); margin-bottom:8px;">📊 종합 빌드 스탯 실시간 측정</div>
+            <div class="stat-row">
+                <span>🛡️ 내구도 / 체력 (HP)</span>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hp"></div></div>
+            </div>
+            <div class="stat-row">
+                <span>⚡ 기체 민첩성 (Speed)</span>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-speed"></div></div>
+            </div>
+            <div class="stat-row">
+                <span>🥷 면역 회피력 (Stealth)</span>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-stealth"></div></div>
+            </div>
+            <div class="stat-row">
+                <span>🧲 BBB 표적 인력 (Magnet)</span>
+                <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-magnet"></div></div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="startArcadeGame()">🚀 뇌혈관장벽(BBB) 침투 출격!</button>
     </div>
 
     <!-- Panel 2: Arcade Game -->
     <div class="panel" id="panel-2">
         <div class="game-wrapper">
             <div class="game-hud">
-                <div class="hud-badge">잔여 약물량: <span id="hud-hp" style="color:var(--accent-green)">100%</span></div>
+                <div class="hud-badge">체력(HP): <span id="hud-hp" style="color:var(--accent-green)">100</span></div>
                 <div class="hud-badge">남은 거리: <span id="hud-dist" style="color:var(--accent-cyan)">50m</span></div>
             </div>
             <canvas id="game-canvas" class="game-canvas"></canvas>
         </div>
 
-        <!-- iPad Touch Game Controls -->
+        <!-- iPad Smooth Touch Controls -->
         <div class="controls-row">
-            <div class="ctrl-btn" ontouchstart="movePlayer(-1)" onclick="movePlayer(-1)">▲ 위로 이동</div>
-            <div class="ctrl-btn" ontouchstart="movePlayer(1)" onclick="movePlayer(1)">▼ 아래로 이동</div>
+            <div class="ctrl-btn" id="btn-up">▲ 위로 이동</div>
+            <div class="ctrl-btn" id="btn-down">▼ 아래로 이동</div>
         </div>
-        <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:6px;">키보드 방향키(↑, ↓)로도 조작 가능합니다.</p>
+        <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:6px;">버튼을 누르고 있으면 부드럽게 연속 이동합니다. (키보드 ↑, ↓ 키 지원)</p>
     </div>
 
     <!-- Panel 3: Results & PK Report -->
@@ -168,11 +184,11 @@
         </div>
 
         <div class="report-box">
-            <h3>🧬 게임 성적 및 약동학 분석 리포트</h3>
+            <h3>🧬 장비 조합 및 약동학 분석 리포트</h3>
             <p id="report-text"></p>
         </div>
 
-        <button class="btn" onclick="goToStep(1)">다시 도전하기 🔄</button>
+        <button class="btn" onclick="goToStep(1)">격납고로 돌아가기 (다시 세팅) 🔄</button>
     </div>
 </div>
 
@@ -180,8 +196,11 @@
     let currentStep = 1;
     let gameAnimId = null;
 
+    // Stat System
     let size = 80, zeta = -15, logp = 3.2;
     let matrix = 'peg-lipo', ligand = 'transferrin';
+
+    let calculatedStats = { hp: 100, speed: 5, stealth: 50, magnet: 50, radius: 8 };
 
     function updateUI() {
         size = parseInt(document.getElementById('input-size').value);
@@ -194,56 +213,84 @@
         document.getElementById('disp-zeta').innerText = (zeta > 0 ? '+' : '') + zeta + ' mV';
         document.getElementById('disp-logp').innerText = logp.toFixed(1);
 
-        document.getElementById('info-matrix').innerHTML = matrix === 'peg-lipo' ? 
-            '<b>💡 역할:</b> 수화층 투명망토로 면역세포 크기가 감소해 피하기 쉬워집니다.' : 
-            '<b>💡 역할:</b> 체내 지속성이 보통인 일반 고분자 껍질입니다.';
+        // Stats calculation with trade-offs
+        let baseHp = 100 + (size - 30) * 0.4;
+        let baseSpeed = 4.5 + (logp * 0.4);
+        let baseStealth = 50 - Math.abs(zeta + 15) * 0.8;
+        let baseMagnet = 30;
 
-        document.getElementById('info-ligand').innerHTML = ligand === 'transferrin' ? 
-            '<b>💡 역할:</b> 뇌혈관 수용체 자석이 작동하여 골인 지점에 쉽게 인력으로 끌려갑니다.' : 
-            '<b>💡 역할:</b> 표적 자석 기능이 없습니다.';
+        // Item Modifiers
+        if (matrix === 'peg-lipo') { baseStealth += 30; baseSpeed -= 0.5; }
+        if (matrix === 'hydrogel') { baseHp += 50; baseMagnet -= 15; }
+        if (matrix === 'plga') { baseSpeed += 1.8; baseStealth -= 10; }
 
-        document.getElementById('info-size').innerHTML = (size >= 50 && size <= 100) ? 
-            '<b>💡 크기:</b> 최적 황금 규격(50~100nm)으로 이동 속도가 매우 안정적입니다.' : 
-            '<b>💡 크기:</b> 규격 불일치로 이동 조작 반응이 둔해집니다.';
+        if (ligand === 'transferrin') { baseMagnet += 55; baseSpeed -= 0.4; }
+        if (ligand === 'folate') { baseSpeed += 1.2; baseMagnet += 5; }
 
-        document.getElementById('info-zeta').innerHTML = Math.abs(zeta) >= 10 ? 
-            '<b>💡 표면 전하:</b> 전기적 척력이 작용하여 입자가 뭉치지 않습니다.' : 
-            '<b>💡 표면 전하:</b> 전하 부족으로 피 속에서 뭉칠 위험이 생깁니다.';
+        calculatedStats = {
+            hp: Math.floor(baseHp),
+            speed: parseFloat(baseSpeed.toFixed(1)),
+            stealth: Math.min(95, Math.max(10, Math.floor(baseStealth))),
+            magnet: Math.min(95, Math.max(5, Math.floor(baseMagnet))),
+            radius: Math.max(5, size / 11)
+        };
 
-        document.getElementById('info-logp').innerHTML = `<b>💡 지용성:</b> LogP ${logp.toFixed(1)} (세포막 투과 속도 결정)`;
+        // Update Radar Gauges
+        document.getElementById('bar-hp').style.width = Math.min(100, (calculatedStats.hp / 180) * 100) + '%';
+        document.getElementById('bar-speed').style.width = Math.min(100, (calculatedStats.speed / 8) * 100) + '%';
+        document.getElementById('bar-stealth').style.width = calculatedStats.stealth + '%';
+        document.getElementById('bar-magnet').style.width = calculatedStats.magnet + '%';
+
+        // Info text
+        document.getElementById('info-matrix').innerHTML = matrix === 'peg-lipo' ? '장점: 면역 충격 데미지 30% 감소 / 단점: 속도 소폭 감소' :
+            (matrix === 'hydrogel' ? '장점: 최대 체력(HP) +50 증가 / 단점: BBB 끌림 약화' : '장점: 이동 스피드 +30% 증가 / 단점: 면역 피격 범위 증가');
+
+        document.getElementById('info-ligand').innerHTML = ligand === 'transferrin' ? '장점: BBB 도착 시 자동 끌당 자석 작용 / 단점: 민첩성 약간 감소' :
+            (ligand === 'folate' ? '장점: 상하 이동 민첩 부스터 / 단점: 골인 지점 자석 없음' : '특징: 기본 스탯 유지는 되지만 특수 기능 없음');
+
+        document.getElementById('info-size').innerHTML = `크기 ${size}nm (크면 체력 증가, 작으면 적의 공격을 피하기 쉬움)`;
+        document.getElementById('info-zeta').innerHTML = `제타전위 ${zeta}mV (음전하가 적절해야 표면 반발력으로 안정적 분산)`;
+        document.getElementById('info-logp').innerHTML = `LogP ${logp.toFixed(1)} (지용성이 적절해야 세포막 투과속도가 상승)`;
     }
 
     function goToStep(step) {
         currentStep = step;
-        document.querySelectorAll('.step-item').forEach((item, idx) => {
-            item.classList.remove('active', 'done');
-            if (idx + 1 === step) item.classList.add('active');
-            if (idx + 1 < step) item.classList.add('done');
-        });
-
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById(`panel-${step}`).classList.add(`active`);
     }
 
-    // --- REAL PLAYABLE GAME LOGIC ---
-    let player = { x: 50, y: 150, vy: 0, hp: 100, radius: 8 };
+    // --- SMOOTH MOVEMENT GAME ENGINE ---
+    let player = { x: 50, y: 150, vy: 0, hp: 100, maxHp: 100 };
     let obstacles = [];
     let goalDistance = 1000;
     let distanceTraveled = 0;
     let isGameOver = false;
 
-    function movePlayer(dir) {
-        if (!isGameOver) {
-            player.y += dir * 25;
-        }
-    }
+    // Smooth Key & Touch Inputs State
+    let keyState = { up: false, down: false };
 
-    // Keyboard Arrow Controls
+    // Setup Continuous Touch Controls
+    const btnUp = document.getElementById('btn-up');
+    const btnDown = document.getElementById('btn-down');
+
+    ['touchstart', 'mousedown'].forEach(evt => {
+        btnUp.addEventListener(evt, (e) => { e.preventDefault(); keyState.up = true; });
+        btnDown.addEventListener(evt, (e) => { e.preventDefault(); keyState.down = true; });
+    });
+
+    ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
+        btnUp.addEventListener(evt, (e) => { e.preventDefault(); keyState.up = false; });
+        btnDown.addEventListener(evt, (e) => { e.preventDefault(); keyState.down = false; });
+    });
+
     window.addEventListener('keydown', (e) => {
-        if (currentStep === 2) {
-            if (e.key === 'ArrowUp') movePlayer(-1);
-            if (e.key === 'ArrowDown') movePlayer(1);
-        }
+        if (e.key === 'ArrowUp') keyState.up = true;
+        if (e.key === 'ArrowDown') keyState.down = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowUp') keyState.up = false;
+        if (e.key === 'ArrowDown') keyState.down = false;
     });
 
     function startArcadeGame() {
@@ -255,19 +302,19 @@
         canvas.height = canvas.parentElement.clientHeight;
 
         player.y = canvas.height / 2;
-        player.hp = 100;
-        player.radius = Math.max(5, size / 12);
+        player.vy = 0;
+        player.hp = calculatedStats.hp;
+        player.maxHp = calculatedStats.hp;
         distanceTraveled = 0;
         obstacles = [];
 
-        // Spawn Immune Cell Obstacles
-        let baseRadius = matrix === 'peg-lipo' ? 14 : 22; // Stealth reduces obstacle effective size
-        for(let i=0; i<18; i++) {
+        // Balanced Macrophage Obstacles (적절한 난이도: 6개)
+        for(let i=0; i<6; i++) {
             obstacles.push({
-                x: 300 + i * 110 + Math.random() * 50,
-                y: 30 + Math.random() * (canvas.height - 60),
-                radius: baseRadius + Math.random() * 8,
-                vy: (Math.random() - 0.5) * 2
+                x: 350 + i * 160 + Math.random() * 40,
+                y: 40 + Math.random() * (canvas.height - 80),
+                radius: 18 + Math.random() * 6,
+                vy: (Math.random() - 0.5) * 1.5
             });
         }
 
@@ -275,45 +322,53 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            distanceTraveled += 3;
-            let remainingDist = Math.max(0, Math.floor((goalDistance - distanceTraveled) / 10));
-            document.getElementById('hud-dist').innerText = remainingDist + 'm';
-            document.getElementById('hud-hp').innerText = Math.floor(player.hp) + '%';
+            // Smooth Movement Physics (부드러운 가속도/감속도)
+            let accel = calculatedStats.speed * 0.8;
+            if (keyState.up) player.vy -= accel;
+            if (keyState.down) player.vy += accel;
+
+            player.y += player.vy;
+            player.vy *= 0.82; // 관성 마찰 감속
 
             // Vessel Top/Bottom Boundaries
+            if (player.y < 25) { player.y = 25; player.vy = 0; }
+            if (player.y > canvas.height - 25) { player.y = canvas.height - 25; player.vy = 0; }
+
+            distanceTraveled += 3.5;
+            let remainingDist = Math.max(0, Math.floor((goalDistance - distanceTraveled) / 10));
+            document.getElementById('hud-dist').innerText = remainingDist + 'm';
+            document.getElementById('hud-hp').innerText = `${Math.max(0, Math.floor(player.hp))} / ${player.maxHp}`;
+
+            // Vessel Top/Bottom Boundaries Draw
             ctx.fillStyle = '#1e293b';
             ctx.fillRect(0, 0, canvas.width, 15);
             ctx.fillRect(0, canvas.height - 15, canvas.width, 15);
-
-            // Keep Player inside Vessel
-            if (player.y < 25) player.y = 25;
-            if (player.y > canvas.height - 25) player.y = canvas.height - 25;
 
             // Render Player (Drug Particle)
             ctx.beginPath();
             ctx.fillStyle = '#00f2fe';
             ctx.shadowColor = '#00f2fe';
             ctx.shadowBlur = 12;
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI*2);
+            ctx.arc(player.x, player.y, calculatedStats.radius, 0, Math.PI*2);
             ctx.fill();
             ctx.shadowBlur = 0;
 
             // Render and Move Macrophages (Obstacles)
             obstacles.forEach(obs => {
-                obs.x -= 2.5; // Scroll left
+                obs.x -= 2.2; // Scroll speed
                 obs.y += obs.vy;
                 if (obs.y < 35 || obs.y > canvas.height - 35) obs.vy *= -1;
 
-                // Respawn passed obstacles
-                if (obs.x < -20) {
-                    obs.x = canvas.width + 50 + Math.random()*100;
-                    obs.y = 30 + Math.random() * (canvas.height - 60);
+                if (obs.x < -30) {
+                    obs.x = canvas.width + 40 + Math.random()*80;
+                    obs.y = 40 + Math.random() * (canvas.height - 80);
                 }
 
-                // Collision Detection with Player
+                // Collision Detection
                 let dist = Math.hypot(player.x - obs.x, player.y - obs.y);
-                if (dist < player.radius + obs.radius) {
-                    player.hp -= 0.8; // Take damage
+                if (dist < calculatedStats.radius + obs.radius) {
+                    let dmg = (100 - calculatedStats.stealth) * 0.08;
+                    player.hp -= dmg;
                     ctx.fillStyle = 'rgba(255, 75, 43, 0.6)';
                 } else {
                     ctx.fillStyle = 'rgba(255, 75, 43, 0.25)';
@@ -330,16 +385,15 @@
             // BBB Receptor Goal Zone
             if (remainingDist <= 0) {
                 let goalX = canvas.width - 60;
-                ctx.fillStyle = ligand === 'transferrin' ? '#00f5a0' : '#334155';
+                ctx.fillStyle = '#00f5a0';
                 ctx.fillRect(goalX, 15, 40, canvas.height - 30);
                 ctx.fillStyle = '#000';
-                ctx.font = '12px Orbitron';
+                ctx.font = 'bold 12px Orbitron';
                 ctx.fillText('BBB', goalX + 8, canvas.height / 2);
 
-                // Magnetic attraction if Transferrin ligand selected
-                if (ligand === 'transferrin') {
-                    player.y += (canvas.height/2 - player.y) * 0.05;
-                }
+                // Magnetic attraction based on Magnet stat
+                let pullForce = (calculatedStats.magnet / 100) * 0.12;
+                player.y += (canvas.height/2 - player.y) * pullForce;
 
                 if (player.x >= goalX - 10) {
                     endGame(true);
@@ -364,14 +418,14 @@
         isGameOver = true;
         goToStep(3);
 
-        let finalHp = Math.max(0, Math.floor(player.hp));
+        let hpPercent = Math.max(0, Math.floor((player.hp / player.maxHp) * 100));
         let rankText = document.getElementById('rank-text');
         let reportText = document.getElementById('report-text');
 
         let rank = 'F';
         if (isSuccess) {
-            if (finalHp >= 75) rank = 'S';
-            else if (finalHp >= 45) rank = 'A';
+            if (hpPercent >= 75) rank = 'S';
+            else if (hpPercent >= 45) rank = 'A';
             else rank = 'B';
         }
 
@@ -379,17 +433,15 @@
         rankText.style.color = rank === 'S' ? '#00f5a0' : (rank === 'F' ? '#ff4b2b' : '#00f2fe');
 
         reportText.innerHTML = isSuccess ? 
-            `<b>🎯 뇌혈관장벽(BBB) 무사 골인 성공! (생존 약물량: ${finalHp}%)</b><br>
-            면역세포(대식세포)의 분해 공격을 물리치고 뇌 조직 내 수용체 매개 세포내이탈작용(RMT)을 완수했습니다. 
-            설계하신 ${matrix.toUpperCase()} 소재의 스텔스 성능과 정전기적 척력이 체내 약동학(PK) 치료 유효 창을 성공적으로 유지시켰습니다.` :
-            `<b>💥 통과 실패 (약물 조기 파괴)</b><br>
-            면역 대식세포의 지속적인 공격으로 뇌혈관에 도달하기 전 약물 입자가 피 속에서 모두 분해되었습니다. 
-            스텔스 고분자 제형(PEG화)을 선택하거나 입자 크기를 조절하여 면역 회피율을 높여보세요!`;
+            `<b>🎯 뇌혈관장벽(BBB) 침투 성공! (잔여 체력: ${hpPercent}%)</b><br>
+            조합하신 ${matrix.toUpperCase()} 커스텀 장비와 ${ligand.toUpperCase()} 표적 리간드의 조화로 면역 공격을 무사히 이겨내고 뇌 신경 세포 수용체 도킹에 성공했습니다.` :
+            `<b>💥 체력 고갈로 미션 실패</b><br>
+            면역세포의 공격으로 체력이 다했습니다. 격납고로 돌아가 [PEG화 리포솜]으로 스텔스력을 높이거나 [pH 하이드로겔]로 최대 체력을 보강해 보세요!`;
 
-        renderPKGraph(finalHp);
+        renderPKGraph(hpPercent);
     }
 
-    function renderPKGraph(finalHp) {
+    function renderPKGraph(hpPercent) {
         const canvas = document.getElementById('pk-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.parentElement.clientWidth;
@@ -411,11 +463,11 @@
         ctx.font = '10px Pretendard';
         ctx.fillText('치료 유효 농도 구간 (Therapeutic Window)', 50, 35);
 
-        ctx.strokeStyle = finalHp > 0 ? '#00f2fe' : '#ff4b2b';
+        ctx.strokeStyle = hpPercent > 0 ? '#00f2fe' : '#ff4b2b';
         ctx.lineWidth = 3;
         ctx.beginPath();
 
-        let maxPeak = (finalHp / 100) * 140;
+        let maxPeak = (hpPercent / 100) * 130;
         for(let t = 0; t < canvas.width - 60; t++) {
             let timeVal = t * 0.08;
             let conc = maxPeak * (Math.exp(-0.1 * timeVal) - Math.exp(-0.8 * timeVal));
