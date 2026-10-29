@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBB Breakout - 표적 약물 전달체 탈출 게임</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #1e293b; border-radius: 16px; padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
+        h1 { color: #38bdf8; font-size: 1.5rem; margin-bottom: 8px; }
+        p.desc { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
+        .stat-box { background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 12px; text-align: left; }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+        label { font-size: 0.9rem; color: #cbd5e1; }
+        input[type=range] { accent-color: #38bdf8; width: 50%; }
+        button { background: #0284c7; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; margin-top: 10px; transition: 0.2s; }
+        button:hover { background: #0369a1; }
+        .screen { display: none; }
+        .active { display: block; }
+        #game-canvas { background: #000; border-radius: 8px; margin-top: 12px; width: 100%; height: 200px; }
+        .result-score { font-size: 2rem; color: #4ade80; font-weight: bold; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <!-- 화면 1: 스탯 설정 -->
+    <div id="screen-setup" class="screen active">
+        <h1>💊 BBB Breakout: 약물 설계</h1>
+        <p class="desc">표적 나노입자의 물성을 조절하여 뇌혈관장벽을 통과하세요!</p>
+        
+        <div class="stat-box">
+            <div class="stat-row">
+                <label>지용성 (LogP)</label>
+                <input type="range" id="stat-logp" min="1" max="5" value="3" onchange="updateStats()">
+                <span id="val-logp">3</span>
+            </div>
+            <div class="stat-row">
+                <label>입자 크기 (Size)</label>
+                <input type="range" id="stat-size" min="1" max="5" value="3" onchange="updateStats()">
+                <span id="val-size">3</span>
+            </div>
+            <div class="stat-row">
+                <label>표적 리간드 (Ligand)</label>
+                <input type="range" id="stat-ligand" min="1" max="5" value="3" onchange="updateStats()">
+                <span id="val-ligand">3</span>
+            </div>
+        </div>
+
+        <button onclick="startGame()">BBB 관문 침투 시작</button>
+    </div>
+
+    <!-- 화면 2: 게임 타이밍 액션 -->
+    <div id="screen-game" class="screen">
+        <h1>🔬 BBB Tight Junction 통과</h1>
+        <p class="desc">틈새가 열리는 순간 [침투] 버튼을 누르세요!</p>
+        <canvas id="game-canvas"></canvas>
+        <button onclick="attemptPass()">⚡ 지금 침투!</button>
+    </div>
+
+    <!-- 화면 3: 결과 스코어 -->
+    <div id="screen-result" class="screen">
+        <h1>🎯 최종 약동학 리포트</h1>
+        <div class="result-score" id="score-text">성공 (85%)</div>
+        <p class="desc" id="score-desc">약물이 표적 수용체에 안정적으로 전달되었습니다.</p>
+        <button onclick="restartGame()">다시 도전하기</button>
+    </div>
+</div>
+
+<script>
+    let logp = 3, size = 3, ligand = 3;
+    let timingPos = 0;
+    let timingSpeed = 2;
+    let animId;
+
+    function updateStats() {
+        logp = parseInt(document.getElementById('stat-logp').value);
+        size = parseInt(document.getElementById('stat-size').value);
+        ligand = parseInt(document.getElementById('stat-ligand').value);
+
+        document.getElementById('val-logp').innerText = logp;
+        document.getElementById('val-size').innerText = size;
+        document.getElementById('val-ligand').innerText = ligand;
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function startGame() {
+        showScreen('screen-game');
+        timingSpeed = 2 + (5 - size); // 입자가 작을수록 타이밍 이동 속도 증가
+        timingPos = 0;
+        drawCanvas();
+    }
+
+    function drawCanvas() {
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // BBB 틈새 (목표 구역) - 지용성이 높을수록 목표 영역이 넓어짐
+        const targetWidth = 30 + (logp * 15);
+        const targetX = (canvas.width - targetWidth) / 2;
+
+        ctx.fillStyle = '#1e3a8a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 열리는 BBB 틈새 (녹색)
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(targetX, 0, targetWidth, canvas.height);
+
+        // 움직이는 약물 나노입자 (바)
+        timingPos += timingSpeed;
+        if (timingPos > canvas.width || timingPos < 0) timingSpeed *= -1;
+
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillRect(timingPos - 4, 0, 8, canvas.height);
+
+        animId = requestAnimationFrame(drawCanvas);
+    }
+
+    function attemptPass() {
+        cancelAnimationFrame(animId);
+        const canvas = document.getElementById('game-canvas');
+        const targetWidth = 30 + (logp * 15);
+        const targetX = (canvas.width - targetWidth) / 2;
+
+        const isSuccess = timingPos >= targetX && timingPos <= (targetX + targetWidth);
+        const score = isSuccess ? Math.min(100, Math.floor(70 + (ligand * 6))) : Math.floor(Math.random() * 30);
+
+        showScreen('screen-result');
+        const scoreText = document.getElementById('score-text');
+        const scoreDesc = document.getElementById('score-desc');
+
+        if (isSuccess) {
+            scoreText.innerText = `성공 (${score}%)`;
+            scoreText.style.color = '#4ade80';
+            scoreDesc.innerText = `지용성(LogP)과 리간드 결합력 덕분에 BBB를 성공적으로 통과하여 뇌 신경 세포 수용체에 도달했습니다!`;
+        } else {
+            scoreText.innerText = `실패 (${score}%)`;
+            scoreText.style.color = '#f87171';
+            scoreDesc.innerText = `BBB 틈새를 놓쳐 약물이 체내에서 분해되었습니다. 지용성(LogP) 스탯을 올려 틈새 범위를 늘려보세요.`;
+        }
+    }
+
+    function restartGame() {
+        showScreen('screen-setup');
+    }
+</script>
+</body>
+</html>
