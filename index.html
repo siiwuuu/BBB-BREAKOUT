@@ -73,7 +73,6 @@
         .report-box p { font-size: 0.9rem; line-height: 1.6; color: #e2e8f0; }
         .rank-badge { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; font-weight: 900; color: var(--accent-green); text-align: center; margin: 10px 0; }
 
-        /* Tutorial Modal */
         .modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.95); z-index: 50; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease-in-out; }
         .modal-content { background: #0f172a; border: 1px solid var(--accent-cyan); border-radius: 16px; padding: 24px; max-width: 600px; width: 100%; }
@@ -81,6 +80,9 @@
         .modal-content h3 { color: var(--accent-green); margin-top: 16px; margin-bottom: 8px; font-size: 1.05rem; }
         .modal-content p, .modal-content li { font-size: 0.9rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 6px; }
         .modal-content ul { margin-left: 20px; margin-bottom: 16px; }
+
+        .pk-guide-box { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(0, 245, 160, 0.3); border-radius: 12px; padding: 14px; margin-top: 10px; font-size: 0.85rem; line-height: 1.5; color: #cbd5e1; }
+        .pk-guide-box b { color: var(--accent-green); }
     </style>
 </head>
 <body>
@@ -150,7 +152,6 @@
             </div>
         </div>
 
-        <!-- Live Stat Gauges -->
         <div class="stat-radar-box">
             <div style="font-size:0.85rem; font-weight:bold; color:var(--accent-cyan); margin-bottom:8px;">설계 나노입자 스탯 측정 결과</div>
             <div class="stat-row">
@@ -207,11 +208,15 @@
 
         <div class="control-group">
             <h3>체내 약물 혈중 농도 곡선 (PK Curve)</h3>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">
-                그래프의 초록색 띠 영역은 독성 부작용 없이 치료 효과만 나타나는 '치료 유효 농도 구간(Therapeutic Window)'입니다.
-            </p>
-            <div class="game-wrapper" style="height: 190px;">
+            <div class="game-wrapper" style="height: 220px;">
                 <canvas id="pk-canvas" class="game-canvas"></canvas>
+            </div>
+            
+            <div class="pk-guide-box">
+                <b>📊 PK 그래프의 학술적 의미:</b><br>
+                • <b>독성 구간 (붉은색 영역):</b> 혈중 약물 농도가 너무 높아 전신 부작용이나 정상 세포 독성이 나타나는 위험 영역입니다.<br>
+                • <b>치료 유효 농도 구간 (초록색 영역):</b> 독성 없이 병소(뇌 조직) 치료 효과만 안전하게 발휘되는 <b>'치료 유효 창(Therapeutic Window)'</b>입니다.<br>
+                • <b>파란색 농도 곡선:</b> 투여 후 시간에 따른 체내 약물 농도 변화입니다. 곡선의 최고점($C_{max}$)이 초록색 안쪽에 위치해야 안전한 약물 설계로 판정됩니다.
             </div>
         </div>
 
@@ -250,7 +255,6 @@
     let currentStep = 0;
     let gameAnimId = null;
 
-    // Default Stats
     let size = 80, zeta = -15, logp = 3.2;
     let matrix = 'peg-lipo', ligand = 'transferrin';
     let calculatedStats = { hp: 100, speed: 5, stealth: 50, magnet: 50, radius: 8 };
@@ -275,7 +279,6 @@
         document.getElementById('disp-zeta').innerText = (zeta > 0 ? '+' : '') + zeta + ' mV';
         document.getElementById('disp-logp').innerText = logp.toFixed(1);
 
-        // 스탯 계산 로직
         let baseHp = 100 + (size - 30) * 0.4;
         let baseSpeed = 4.0 + (logp * 0.3);
         let baseStealth = 50 - Math.abs(zeta + 15) * 0.8;
@@ -301,7 +304,6 @@
         document.getElementById('bar-stealth').style.width = calculatedStats.stealth + '%';
         document.getElementById('bar-magnet').style.width = calculatedStats.magnet + '%';
 
-        // 용어 업데이트
         document.getElementById('info-matrix').innerHTML = matrix === 'peg-lipo' ? '장점: 면역 대식세포 식균 데미지 30% 감소' :
             (matrix === 'hydrogel' ? '장점: 초기 탑재 약물량(Max HP) 대폭 증가' : '장점: 혈류 내 이동 속도 +30% 증가 (회피 용이)');
 
@@ -319,7 +321,6 @@
         document.getElementById(`panel-${step}`).classList.add(`active`);
     }
 
-    // 게임 로직 변수
     let player = { x: 60, y: 150, vy: 0, hp: 100, maxHp: 100 };
     let obstacles = [];
     let totalDistance = 500;
@@ -329,7 +330,6 @@
 
     let keyState = { up: false, down: false };
 
-    // 조작 이벤트 바인딩
     const btnUp = document.getElementById('btn-up');
     const btnDown = document.getElementById('btn-down');
 
@@ -361,14 +361,12 @@
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
 
-        // 플레이어 초기화
         player.x = 60;
         player.y = canvas.height / 2;
         player.vy = 0;
         player.hp = calculatedStats.hp;
         player.maxHp = calculatedStats.hp;
         
-        // 거리 및 골인 지점 초기화
         totalDistance = 500;
         currentDistance = 500;
         goalX = canvas.width + 50; 
@@ -387,34 +385,29 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // [조작감 개선 로직] 가속도와 마찰력 밸런스 조정
-            let accel = calculatedStats.speed * 0.5; // 기존 0.35에서 상향 (답답함 해소)
+            let accel = calculatedStats.speed * 0.5;
             if (keyState.up) player.vy -= accel;
             if (keyState.down) player.vy += accel;
 
             player.y += player.vy;
-            player.vy *= 0.88; // 마찰력 조정 (부드럽게 멈춤)
+            player.vy *= 0.88;
 
             if (player.y < 25) { player.y = 25; player.vy = 0; }
             if (player.y > canvas.height - 25) { player.y = canvas.height - 25; player.vy = 0; }
 
-            // [거리 차감 로직]
             if (currentDistance > 0) {
                 currentDistance -= (calculatedStats.speed * 0.4);
                 if (currentDistance < 0) currentDistance = 0;
             }
             
-            // HUD 업데이트 (거리 단위를 마이크로미터로 설정)
             let displayMeters = Math.ceil(currentDistance);
             document.getElementById('hud-dist').innerText = displayMeters + ' μm';
             document.getElementById('hud-hp').innerText = `${Math.max(0, Math.floor(player.hp))} / ${player.maxHp}`;
 
-            // 혈관 상하단 렌더링
             ctx.fillStyle = '#1e293b';
             ctx.fillRect(0, 0, canvas.width, 15);
             ctx.fillRect(0, canvas.height - 15, canvas.width, 15);
 
-            // 플레이어(나노입자) 렌더링
             ctx.beginPath();
             ctx.fillStyle = '#00f2fe';
             ctx.shadowColor = '#00f2fe';
@@ -423,9 +416,8 @@
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // 장애물(대식세포) 이동 및 충돌 판정
             obstacles.forEach(obs => {
-                obs.x -= 2.5; // 다가오는 속도
+                obs.x -= 2.5;
                 obs.y += obs.vy;
                 if (obs.y < 35 || obs.y > canvas.height - 35) obs.vy *= -1;
 
@@ -451,11 +443,9 @@
                 ctx.stroke();
             });
 
-            // [버그 수정됨] 남은 거리가 0이 되면 BBB 관문이 왼쪽으로 이동해 옴
             if (currentDistance <= 0) {
-                goalX -= (calculatedStats.speed * 0.7); // 벽이 다가오는 속도
+                goalX -= (calculatedStats.speed * 0.7);
 
-                // 관문 그리기
                 ctx.fillStyle = 'rgba(0, 245, 160, 0.2)';
                 ctx.fillRect(goalX, 15, canvas.width - goalX, canvas.height - 30);
                 
@@ -466,19 +456,16 @@
                 ctx.font = 'bold 16px Orbitron';
                 ctx.fillText('BBB Receptor', goalX + 16, canvas.height / 2);
 
-                // 트랜스페린 등 리간드 인력 작용
                 let pullForce = (calculatedStats.magnet / 100) * 0.2;
                 player.y += (canvas.height/2 - player.y) * pullForce;
-                player.x += 1.5; // 플레이어도 점진적으로 전진
+                player.x += 1.5;
 
-                // 벽과 완전히 접촉 시 클리어 판정
                 if (goalX <= player.x + calculatedStats.radius) {
                     endGame(true);
                     return;
                 }
             }
 
-            // 약물 소진 시 게임 오버
             if (player.hp <= 0) {
                 endGame(false);
                 return;
@@ -511,7 +498,7 @@
         rankText.style.color = rank.includes('S') ? '#00f5a0' : (rank.includes('F') ? '#ff4b2b' : '#00f2fe');
 
         reportText.innerHTML = isSuccess ? 
-            `<b>뇌혈관장벽(BBB) 투과 성공 (잔여 약물량: ${hpPercent}%)</b><br>
+            `<b>뇌혈관장벽(BBB) 침투 성공 (잔여 약물량: ${hpPercent}%)</b><br>
             면역 대식세포의 식균 작용을 최소화하고 표적 신경세포 수용체 도킹에 성공했습니다.<br>
             하단의 약동학(PK) 그래프 분석 결과, 최종 뇌 조직 내 전달된 약물 농도가 부작용(독성) 범위를 넘지 않으면서 <b>'치료 유효 농도 구간(초록색 띠)'</b>에 안착하여 안전한 효능을 발휘하는 것으로 확인되었습니다.` :
             `<b>혈중 약물 소실(Clearance)로 인한 치료 실패</b><br>
@@ -520,6 +507,7 @@
         renderPKGraph(hpPercent);
     }
 
+    // [가독성 개선된 PK 그래프 렌더링 함수]
     function renderPKGraph(hpPercent) {
         const canvas = document.getElementById('pk-canvas');
         const ctx = canvas.getContext('2d');
@@ -528,38 +516,50 @@
 
         ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // 축 렌더링
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 1;
+        // X, Y축
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(40, 20); ctx.lineTo(40, canvas.height - 30);
+        ctx.moveTo(50, 20); ctx.lineTo(50, canvas.height - 30);
         ctx.lineTo(canvas.width - 20, canvas.height - 30);
         ctx.stroke();
 
-        // 독성 구간 (빨간색)
-        ctx.fillStyle = 'rgba(255, 75, 43, 0.08)';
-        ctx.fillRect(40, 20, canvas.width - 60, 25);
+        // 독성 구간 (상단 붉은색)
+        ctx.fillStyle = 'rgba(255, 75, 43, 0.15)';
+        ctx.fillRect(50, 20, canvas.width - 70, 30);
         ctx.fillStyle = '#ff4b2b';
-        ctx.font = '11px Pretendard';
-        ctx.fillText('부작용 위험 독성 구간 (Toxic Level)', 45, 36);
+        ctx.font = 'bold 12px Pretendard';
+        ctx.fillText('▲ 독성 영역 (Toxic Level)', 60, 38);
 
-        // 치료 유효 농도 구간 (초록색)
-        ctx.fillStyle = 'rgba(0, 245, 160, 0.12)';
-        ctx.fillRect(40, 45, canvas.width - 60, 45);
+        // 치료 유효 농도 구간 (중앙 초록색)
+        ctx.fillStyle = 'rgba(0, 245, 160, 0.2)';
+        ctx.fillRect(50, 50, canvas.width - 70, 55);
         ctx.fillStyle = '#00f5a0';
-        ctx.font = '11px Pretendard';
-        ctx.fillText('치료 유효 농도 구간 (Therapeutic Window)', 45, 60);
+        ctx.font = 'bold 12px Pretendard';
+        ctx.fillText('★ 치료 유효 농도 구간 (Therapeutic Window)', 60, 72);
 
-        // PK 혈중 농도 곡선 렌더링
+        // 최소 유효 농도(MEC) 기준선
+        ctx.strokeStyle = '#00f5a0';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(50, 105); ctx.lineTo(canvas.width - 20, 105);
+        ctx.stroke();
+        ctx.setLineDash([]); // 점선 해제
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 11px Pretendard';
+        ctx.fillText('최소 유효 농도 (MEC)', canvas.width - 130, 120);
+
+        // PK 곡선 (약물 농도 변화)
         ctx.strokeStyle = hpPercent > 0 ? '#00f2fe' : '#ff4b2b';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
 
-        let maxPeak = (hpPercent / 100) * 110;
-        for(let t = 0; t < canvas.width - 60; t++) {
+        let maxPeak = (hpPercent / 100) * 115;
+        for(let t = 0; t < canvas.width - 70; t++) {
             let timeVal = t * 0.08;
             let conc = maxPeak * (Math.exp(-0.1 * timeVal) - Math.exp(-0.8 * timeVal));
-            let px = 40 + t;
+            let px = 50 + t;
             let py = (canvas.height - 30) - conc;
 
             if (t === 0) ctx.moveTo(px, py);
@@ -568,7 +568,6 @@
         ctx.stroke();
     }
 
-    // 배경 입자 애니메이션
     const bgCanvas = document.getElementById('bg-canvas');
     const bgCtx = bgCanvas.getContext('2d');
     let bgParticles = [];
