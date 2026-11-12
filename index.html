@@ -3,288 +3,623 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TargetCraft — 표적 약물 전달체(ADC) 설계 시뮬레이터</title>
+  <title>TargetCraft — 표적 치료 설계 시뮬레이터</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif;
-      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+      background-color: #f1f5f9;
       color: #0f172a;
-      line-height: 1.6;
-      padding: 24px 16px;
+      line-height: 1.65;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .container { max-width: 840px; margin: 0 auto; }
 
-    header { text-align: center; margin-bottom: 24px; }
-    .badge {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: #0369a1;
-      background: #e0f2fe;
-      padding: 4px 12px;
-      border-radius: 999px;
-      margin-bottom: 8px;
-    }
-    h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
-    .subtitle { font-size: 14px; color: #475569; }
-
-    /* 미션 탭 */
-    .mission-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-    .tab-btn {
-      flex: 1;
-      padding: 12px 10px;
-      border: 1px solid #cbd5e1;
+    /* 상단 네비게이션 바 (메인 화면 제외 표시) */
+    .topbar {
       background: #ffffff;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      color: #475569;
-      transition: all 0.15s;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 20px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    .tab-btn.active {
+    .topbar.visible { display: flex; }
+    .brand-mini {
+      font-weight: 800;
+      font-size: 16px;
+      color: #0f172a;
+      cursor: pointer;
+    }
+    .step-indicator {
+      display: flex;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .step-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+    .step-pill.active {
       background: #0f172a;
       color: #ffffff;
-      border-color: #0f172a;
     }
-    .tab-btn.cleared::after { content: " ✓"; color: #4ade80; }
+    .step-pill.done {
+      background: #dcfce7;
+      color: #166534;
+    }
 
-    /* 상단: 표적 분석 + 실시간 분자 조립 프리뷰 */
-    .top-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 16px;
-      margin-bottom: 20px;
+    /* 공통 컨테이너 & 화면 전환 애니메이션 */
+    .main-wrap {
+      flex: 1;
+      width: 100%;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 32px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
+    .screen {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .screen.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 공통 카드 및 버튼 */
     .card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
-    .card-label {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
-    .mission-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
-    .mission-desc { font-size: 13.5px; color: #334155; margin-bottom: 14px; }
-
-    .env-list {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 12px;
-      font-size: 13px;
-    }
-    .env-item { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .env-item:last-child { margin-bottom: 0; }
-    .env-key { color: #64748b; font-weight: 600; }
-    .env-val { font-weight: 700; color: #0f172a; }
-
-    /* SVG 시각화 박스 */
-    .preview-box {
-      display: flex;
-      flex-direction: column;
+    .btn-primary {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: #f1f5f9;
-      border-radius: 10px;
-      padding: 12px;
-      min-height: 190px;
-    }
-    .preview-caption {
-      font-size: 12px;
-      color: #475569;
-      font-weight: 600;
-      margin-top: 8px;
-      text-align: center;
-    }
-
-    /* 3단 모듈 조립 영역 */
-    .builder-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-    .module-col h3 {
-      font-size: 14px;
-      font-weight: 800;
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    .option-btn {
+      gap: 8px;
       width: 100%;
-      text-align: left;
-      background: #ffffff;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .option-btn:hover { border-color: #94a3b8; }
-    .option-btn.selected {
-      border-color: #2563eb;
-      background: #eff6ff;
-    }
-    .opt-title { font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 3px; }
-    .opt-desc { font-size: 12px; color: #475569; line-height: 1.4; }
-
-    /* 실행 버튼 */
-    .launch-btn {
-      width: 100%;
-      padding: 15px;
+      padding: 16px 24px;
       background: #0f172a;
       color: #ffffff;
-      font-size: 15px;
-      font-weight: 800;
+      font-size: 16px;
+      font-weight: 700;
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s;
     }
-    .launch-btn:hover { background: #1e293b; }
+    .btn-primary:hover { background: #1e293b; }
+    .btn-primary:active { transform: scale(0.99); }
 
-    /* 시뮬레이션 결과 리포트 */
-    .report-card {
-      display: none;
-      margin-top: 20px;
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 20px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 15px;
+      font-weight: 700;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn-group .btn-secondary { flex: 1; }
+    .btn-group .btn-primary { flex: 2; }
+
+    /* [화면 1] 메인 타이틀 화면 */
+    .hero-box {
+      text-align: center;
+      padding: 44px 28px;
+    }
+    .hero-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #2563eb;
+      background: #dbeafe;
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .hero-title {
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .hero-desc {
+      font-size: 16px;
+      color: #475569;
+      max-width: 520px;
+      margin: 0 auto 32px;
+    }
+    .principle-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .principle-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .principle-num {
+      font-size: 12px;
+      font-weight: 800;
+      color: #2563eb;
+      margin-bottom: 4px;
+    }
+    .principle-name {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .principle-text {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* [화면 2] 미션 선택 화면 */
+    .screen-header {
+      margin-bottom: 22px;
+    }
+    .screen-header h2 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .screen-header p {
+      font-size: 15px;
+      color: #475569;
+    }
+    .mission-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .mission-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 22px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .mission-card:hover {
+      border-color: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+    }
+    .mission-card.cleared {
+      border-color: #22c55e;
+      background: #f0fdf4;
+    }
+    .m-tag {
+      font-size: 12px;
+      font-weight: 800;
+      color: #2563eb;
+      margin-bottom: 4px;
+    }
+    .mission-card.cleared .m-tag { color: #16a34a; }
+    .m-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .m-sub {
+      font-size: 14px;
+      color: #475569;
+    }
+    .m-arrow {
+      font-size: 20px;
+      font-weight: 800;
+      color: #94a3b8;
+    }
+
+    /* [화면 3] 표적 세포 브리핑 */
+    .briefing-visual {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 14px;
       padding: 20px;
-      border: 2px solid;
-    }
-    .report-card.success {
-      display: block;
-      background: #f0fdf4;
-      border-color: #22c55e;
-    }
-    .report-card.fail {
-      display: block;
-      background: #fef2f2;
-      border-color: #ef4444;
-    }
-    .step-row {
+      margin: 18px 0;
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-      font-size: 13.5px;
+      flex-direction: column;
+      align-items: center;
     }
-    .step-row:last-child { border-bottom: none; }
-    .step-badge {
-      font-weight: 800;
+    .cond-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .cond-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .cond-label {
       font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 6px;
-      white-space: nowrap;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 4px;
     }
-    .pass { background: #dcfce7; color: #166534; }
-    .block { background: #fee2e2; color: #991b1b; }
+    .cond-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+    }
 
-    @media (max-width: 720px) {
-      .top-grid, .builder-grid { grid-template-columns: 1fr; }
+    /* [화면 4] 3단 모듈 조립 스튜디오 */
+    .assembly-banner {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .assembly-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #64748b;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .assembly-caption {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 6px;
+    }
+    .builder-section {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+    .builder-section h3 {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+    .opt-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .opt-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .opt-card:hover { border-color: #94a3b8; }
+    .opt-card.selected {
+      background: #eff6ff;
+      border-color: #2563eb;
+    }
+    .opt-name {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+    .opt-info {
+      font-size: 12.5px;
+      color: #475569;
+      line-height: 1.45;
+    }
+
+    /* [화면 5] 결과 리포트 화면 */
+    .result-banner {
+      text-align: center;
+      padding: 24px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+    .result-banner.success {
+      background: #dcfce7;
+      color: #14532d;
+    }
+    .result-banner.fail {
+      background: #fee2e2;
+      color: #7f1d1d;
+    }
+    .result-banner h2 {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+    .step-result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .step-result-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      background: #f8fafc;
+    }
+    .step-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .step-name {
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .badge-pass {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #166534;
+    }
+    .badge-fail {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .step-msg {
+      font-size: 14px;
+      color: #334155;
+    }
+
+    @media (max-width: 680px) {
+      .principle-grid, .cond-grid, .opt-row { grid-template-columns: 1fr; }
+      .hero-title { font-size: 30px; }
+      .step-indicator { display: none; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <span class="badge">TARGETED DRUG DELIVERY SIMULATOR</span>
-      <h1>TargetCraft</h1>
-      <p class="subtitle">항원-항체 특이적 인식과 미세환경 감응 원리를 조합해 부작용 없는 표적 치료제를 설계하세요.</p>
-    </header>
 
-    <div class="mission-tabs" id="missionTabs"></div>
-
-    <div class="top-grid">
-      <!-- 왼쪽: 표적 세포 환경 정보 -->
-      <div class="card" id="missionInfo"></div>
-
-      <!-- 오른쪽: 조립된 복합체 SVG 시각화 -->
-      <div class="card">
-        <div class="card-label">Live Molecular Assembly</div>
-        <div class="preview-box" id="svgPreview"></div>
-        <p class="preview-caption" id="previewCaption">아래 3가지 모듈을 선택해 복합체를 조립하세요.</p>
-      </div>
+  <!-- 상단 진행 표시 바 -->
+  <nav class="topbar" id="topbar">
+    <div class="brand-mini" onclick="goScreen('home')">🧬 TargetCraft</div>
+    <div class="step-indicator">
+      <span class="step-pill" id="pill-missions">1. 미션 선택</span>
+      <span class="step-pill" id="pill-briefing">2. 표적 분석</span>
+      <span class="step-pill" id="pill-builder">3. 약물 설계</span>
+      <span class="step-pill" id="pill-result">4. 투여 결과</span>
     </div>
+  </nav>
 
-    <!-- 3단 모듈 선택기 -->
-    <div class="builder-grid" id="builderGrid"></div>
+  <main class="main-wrap">
 
-    <button class="launch-btn" onclick="runSimulation()">🧪 체내 투여 시뮬레이션 실행</button>
+    <!-- [화면 1] 메인 타이틀 화면 -->
+    <section class="screen active" id="screen-home">
+      <div class="card hero-box">
+        <span class="hero-badge">BIO-PHARMA SIMULATION</span>
+        <h1 class="hero-title">TargetCraft</h1>
+        <p class="hero-desc">
+          정상 세포는 건드리지 않고 질병 세포만 골라 치료하는<br />
+          <strong>항원-항체 표적 전달체(ADC)</strong>의 설계 원리를 직접 체험해 보세요.
+        </p>
 
-    <!-- 결과 판정 리포트 -->
-    <div class="report-card" id="reportCard"></div>
-  </div>
+        <div class="principle-grid">
+          <div class="principle-item">
+            <div class="principle-num">STEP 01 · 인식</div>
+            <div class="principle-name">항원-항체 특이성</div>
+            <div class="principle-text">질병 세포 표면에만 드러난 고유 항원 모양에 맞는 항체를 결합시킵니다.</div>
+          </div>
+          <div class="principle-item">
+            <div class="principle-num">STEP 02 · 전달</div>
+            <div class="principle-name">미세환경 감응 방출</div>
+            <div class="principle-text">혈액 속에서는 잠겨 있다가 표적의 특수 환경(pH·효소)에서만 풀립니다.</div>
+          </div>
+          <div class="principle-item">
+            <div class="principle-num">STEP 03 · 작용</div>
+            <div class="principle-name">맞춤형 약리 기전</div>
+            <div class="principle-text">세포 내부로 방출된 약물이 질환의 원인 기전만을 선택적으로 차단합니다.</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="goScreen('missions')">
+          시뮬레이션 시작하기 →
+        </button>
+      </div>
+    </section>
+
+    <!-- [화면 2] 미션 선택 화면 -->
+    <section class="screen" id="screen-missions">
+      <div class="screen-header">
+        <h2>치료 표적 시나리오 선택</h2>
+        <p>해결할 인체 내 표적 환경을 하나 선택하세요. 각 환경마다 요구하는 결합·방출 조건이 다릅니다.</p>
+      </div>
+      <div class="mission-list" id="missionList"></div>
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="goScreen('home')">← 메인으로</button>
+      </div>
+    </section>
+
+    <!-- [화면 3] 표적 세포 분석 브리핑 화면 -->
+    <section class="screen" id="screen-briefing">
+      <div class="card" id="briefingContent"></div>
+    </section>
+
+    <!-- [화면 4] 3단 모듈 조립 스튜디오 화면 -->
+    <section class="screen" id="screen-builder">
+      <div class="screen-header">
+        <h2 id="builderTitle">표적 치료제 조립</h2>
+        <p>앞서 분석한 표적 조건에 맞춰 3가지 부품을 하나씩 선택하세요.</p>
+      </div>
+
+      <!-- 실시간 조립 시각화 배너 -->
+      <div class="assembly-banner">
+        <div class="assembly-label">LIVE MOLECULAR ASSEMBLY (현재 조립 상태)</div>
+        <div id="svgPreview"></div>
+        <div class="assembly-caption" id="previewCaption"></div>
+      </div>
+
+      <!-- 3개 부품 선택 영역 -->
+      <div id="builderSections"></div>
+
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="goScreen('briefing')">← 표적 정보 다시보기</button>
+        <button class="btn-primary" onclick="runSimulation()">🧪 체내 투여 시뮬레이션 실행</button>
+      </div>
+    </section>
+
+    <!-- [화면 5] 투여 결과 및 해설 화면 -->
+    <section class="screen" id="screen-result">
+      <div class="card" id="resultContent"></div>
+    </section>
+
+  </main>
 
   <script>
-    // 1. 3개 스테이지(보편적 생체 환경 모델) 정의
+    // 1. 시나리오 데이터 (표적 그림 SVG 포함)
     const missions = [
       {
         id: 0,
-        tab: "Mission 1: 산성 미세환경 종양",
-        title: "표적 A: 급속 증식하는 변이 세포 (산성 미세환경)",
-        desc: "정상 세포는 둥근 표면 단백질을 가지지만, 이 변이 세포는 표면에 '뾰족한 삼각형(+) 항원'을 과발현하며 대사 과정으로 인해 세포 내부가 약산성(pH 5.5)을 띱니다.",
-        env: [
-          { k: "표적 세포 특이 항원", v: "삼각형(+) 돌출 항원" },
-          { k: "정상 세포 표면", v: "원형(중성) 일반 단백질" },
-          { k: "혈액 vs 세포 내 환경", v: "혈액 pH 7.4 → 세포 내 pH 5.5" }
+        tag: "SCENARIO 01 · 암세포 표적 치료",
+        title: "산성 미세환경의 변이 종양 세포",
+        shortDesc: "표면의 삼각형(+) 항원과 세포 내부의 산성(pH 5.5) 환경을 이용한 정밀 타격",
+        detailDesc: "정상 세포는 둥근 표면 단백질을 가지지만, 이 변이 세포는 표면에 '뾰족한 삼각형(+) 항원'을 과발현합니다. 또한 빠른 대사로 인해 혈액(pH 7.4)과 달리 세포 내부가 약산성(pH 5.5)을 띱니다.",
+        conditions: [
+          { label: "표적 고유 항원", val: "삼각형(+) 돌출 항원" },
+          { label: "정상 세포 표면", val: "둥근 원형 일반 단백질" },
+          { label: "방출 환경 조건", val: "혈액 pH 7.4 → 세포 내 pH 5.5" }
         ],
+        cellSVG: `
+          <svg width="320" height="120" viewBox="0 0 320 120">
+            <!-- 정상 세포 -->
+            <circle cx="75" cy="65" r="32" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+            <circle cx="75" cy="28" r="6" fill="#94a3b8"/>
+            <text x="75" y="69" font-size="11" font-weight="bold" text-anchor="middle" fill="#475569">정상 세포</text>
+            <text x="75" y="112" font-size="11" text-anchor="middle" fill="#64748b">원형 표면 단백질</text>
+
+            <!-- 표적 변이 세포 -->
+            <circle cx="225" cy="65" r="36" fill="#fee2e2" stroke="#ef4444" stroke-width="2.5"/>
+            <polygon points="225,14 215,31 235,31" fill="#ef4444"/>
+            <text x="225" y="62" font-size="11" font-weight="bold" text-anchor="middle" fill="#991b1b">표적 변이 세포</text>
+            <text x="225" y="77" font-size="10" font-weight="bold" text-anchor="middle" fill="#b91c1c">(내부 pH 5.5)</text>
+            <text x="225" y="112" font-size="11" font-weight="bold" text-anchor="middle" fill="#dc2626">삼각형(+) 특이 항원</text>
+          </svg>
+        `,
         correct: { head: "tri", linker: "acid", payload: "cyto" }
       },
       {
         id: 1,
-        tab: "Mission 2: 혈액-뇌 장벽(BBB)",
-        title: "표적 B: 뇌혈관 장벽 너머 신경계 염증 세포",
-        desc: "뇌를 보호하는 치밀한 지질 이중층 장벽(BBB)을 통과해야 합니다. 혈관 내피세포의 '사각형 수용체'를 이용해 장벽을 건넌 뒤, 소수성 지질 환경을 통과해 염증 신호만 차단하세요.",
-        env: [
-          { k: "장벽 통과 열쇠(수용체)", v: "사각형 트랜스페린 수용체" },
-          { k: "장벽 통과 물성 조건", v: "지용성(소수성) 균형 필요" },
-          { k: "치료 목표", v: "뉴런 사멸 없이 염증 신호 차단" }
+        tag: "SCENARIO 02 · 중추신경계 전달",
+        title: "혈액-뇌 장벽(BBB) 너머 신경 염증",
+        shortDesc: "뇌혈관 수용체 결합과 지용성 막 투과 원리를 이용한 신경계 약물 전달",
+        detailDesc: "뇌는 치밀한 지질 이중층 장벽(BBB)으로 보호되어 일반 약물이 들어가지 못합니다. 혈관 내피세포의 '사각형 수용체'에 결합해 장벽을 건넌 뒤, 지질 친화적인 전달체로 신경 염증만 진정시켜야 합니다.",
+        conditions: [
+          { label: "장벽 통과 수용체", val: "사각형 수송 수용체" },
+          { label: "장벽 투과 물성", val: "소수성(지질 이중층) 친화" },
+          { label: "치료 목표", val: "뉴런 보호 및 염증 신호 차단" }
         ],
+        cellSVG: `
+          <svg width="320" height="120" viewBox="0 0 320 120">
+            <!-- 혈액-뇌 장벽(BBB) -->
+            <rect x="135" y="15" width="22" height="90" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+            <rect x="125" y="48" width="14" height="24" fill="#d97706"/>
+            <text x="146" y="116" font-size="10" font-weight="bold" text-anchor="middle" fill="#b45309">지질 장벽(BBB)</text>
+
+            <!-- 왼쪽: 혈류 -->
+            <text x="65" y="55" font-size="12" font-weight="bold" text-anchor="middle" fill="#2563eb">혈관 내부</text>
+            <text x="65" y="72" font-size="11" text-anchor="middle" fill="#64748b">사각형 수용체 인식 필요</text>
+
+            <!-- 오른쪽: 뇌 신경 조직 -->
+            <circle cx="240" cy="60" r="34" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+            <text x="240" y="57" font-size="11" font-weight="bold" text-anchor="middle" fill="#5b21b6">신경 염증 부위</text>
+            <text x="240" y="72" font-size="10" text-anchor="middle" fill="#6d28d9">(뉴런 손상 방지)</text>
+          </svg>
+        `,
         correct: { head: "sq", linker: "lipo", payload: "signal" }
       },
       {
         id: 2,
-        tab: "Mission 3: 바이오필름 세균 군집",
-        title: "표적 C: 끈적한 생체막(바이오필름) 보호 세균",
-        desc: "세균들이 다당류 점액질 막을 형성해 일반 약물을 튕겨냅니다. 세균 외막의 '육각형 표면 항원'에 결합한 뒤, 세균 특이적 분해 효소에 반응해 군집 신호(정족수 인식)를 끊어야 합니다.",
-        env: [
-          { k: "세균 표면 특이 항원", v: "육각형 외막 단백질" },
-          { k: "방출 트리거(방아쇠)", v: "세균 내부 특이적 가수분해 효소" },
-          { k: "치료 목표", v: "내성 유발 없는 집단 신호 차단" }
+        tag: "SCENARIO 03 · 항생제 내성 극복",
+        title: "바이오필름으로 보호받는 세균 군집",
+        shortDesc: "세균 특이적 가수분해 효소와 정족수 인식(QS) 차단을 통한 군집 해체",
+        detailDesc: "세균들이 끈적한 생체막(바이오필름)을 만들어 항생제를 막아냅니다. 세균 외막의 '육각형 표면 항원'에 결합한 뒤, 세균 내부 효소에 반응해 군집 통신 신호만 끊어야 내성 없이 해결됩니다.",
+        conditions: [
+          { label: "세균 표면 항원", val: "육각형 외막 단백질" },
+          { label: "방출 방아쇠", val: "세균 특이적 가수분해 효소" },
+          { label: "치료 목표", val: "사멸 대신 집단 신호(QS) 차단" }
         ],
+        cellSVG: `
+          <svg width="320" height="120" viewBox="0 0 320 120">
+            <!-- 바이오필름 외막 -->
+            <rect x="70" y="16" width="180" height="88" rx="44" fill="#dcfce7" stroke="#22c55e" stroke-width="2" stroke-dasharray="5,4"/>
+            <!-- 세균 본체 -->
+            <rect x="105" y="36" width="110" height="48" rx="24" fill="#16a34a"/>
+            <!-- 육각형 항원 -->
+            <polygon points="160,18 170,24 170,34 160,40 150,34 150,24" fill="#065f46"/>
+            <text x="160" y="64" font-size="11" font-weight="bold" text-anchor="middle" fill="#ffffff">세균 군집 (특이 효소 보유)</text>
+            <text x="160" y="116" font-size="11" font-weight="bold" text-anchor="middle" fill="#15803d">육각형 외막 항원 + 바이오필름</text>
+          </svg>
+        `,
         correct: { head: "hex", linker: "enz", payload: "qsi" }
       }
     ];
 
-    // 2. 사용자가 선택할 수 있는 3단 모듈 데이터
+    // 2. 3단 조립 부품 데이터
     const modules = {
       head: [
-        { id: "tri", name: "삼각형(-) 특이 항체", desc: "삼각형(+) 항원의 입체 구조·전하와 상보적으로 결합", color: "#2563eb" },
-        { id: "sq", name: "사각형 수용체 리간드", desc: "뇌혈관 장벽의 사각형 수용체와 결합해 수송 유도", color: "#7c3aed" },
-        { id: "hex", name: "육각형 외막 항체", desc: "세균 표면의 육각형 항원을 특이적으로 인식", color: "#059669" }
+        { id: "tri", name: "삼각형(-) 특이 항체", desc: "삼각형(+) 항원의 입체 구조와 상보적으로 결합", color: "#2563eb" },
+        { id: "sq", name: "사각형 수용체 리간드", desc: "뇌혈관 장벽의 사각형 수송 수용체와 결합", color: "#7c3aed" },
+        { id: "hex", name: "육각형 외막 항체", desc: "세균 외막의 육각형 표면 항원만 선택 인식", color: "#059669" }
       ],
       linker: [
-        { id: "acid", name: "산성 감응형 링커", desc: "혈액(pH 7.4)에선 유지, 산성(pH 5.5)에서 끊어짐", color: "#f59e0b" },
-        { id: "lipo", name: "지용성 고분자 전달체", desc: "지질 이중층(BBB) 친화도가 높아 막 투과 유리", color: "#ec4899" },
-        { id: "enz", name: "효소 절단형 펩타이드", desc: "표적 세균 내부의 특정 효소를 만나야만 분리됨", color: "#06b6d4" }
+        { id: "acid", name: "산성 감응형 링커", desc: "중성(pH 7.4)에선 유지, 산성(pH 5.5)에서 절단", color: "#f59e0b" },
+        { id: "lipo", name: "지용성 고분자 전달체", desc: "지질 이중층(BBB) 친화도가 높아 장벽 통과 유리", color: "#ec4899" },
+        { id: "enz", name: "효소 절단형 펩타이드", desc: "세균 내부의 특이적 분해 효소를 만나야 끊어짐", color: "#06b6d4" }
       ],
       payload: [
-        { id: "cyto", name: "세포 분열 억제제", desc: "세포 내부에 방출 시 비정상 증식 세포를 사멸시킴", color: "#dc2626" },
-        { id: "signal", name: "신경 보호·항염증 인자", desc: "뉴런 손상 없이 과활성 염증 경로만 진정시킴", color: "#4f46e5" },
-        { id: "qsi", name: "정족수 인식 차단제", desc: "세균을 죽이지 않고 통신만 끊어 바이오필름 해체", color: "#16a34a" }
+        { id: "cyto", name: "세포 분열 억제제", desc: "세포 내부 방출 시 변이 증식 세포를 정밀 사멸", color: "#dc2626" },
+        { id: "signal", name: "신경 보호·항염증 인자", desc: "뉴런 손상 없이 과활성 염증 신호만 진정", color: "#4f46e5" },
+        { id: "qsi", name: "정족수 인식 차단제", desc: "세균 통신 신호만 끊어 바이오필름을 해체", color: "#16a34a" }
       ]
     };
 
@@ -292,158 +627,219 @@
     let cleared = [false, false, false];
     let selected = { head: "tri", linker: "acid", payload: "cyto" };
 
-    // 3. 화면 전체 렌더링
-    function renderAll() {
-      // 탭 그리기
-      document.getElementById("missionTabs").innerHTML = missions.map((m, idx) => `
-        <button class="tab-btn ${idx === currentMission ? "active" : ""} ${cleared[idx] ? "cleared" : ""}"
-                onclick="changeMission(${idx})">
-          ${m.tab}
+    // 3. 화면 전환 핵심 컨트롤러
+    function goScreen(screenName) {
+      document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
+      document.getElementById(`screen-${screenName}`).classList.add("active");
+
+      const topbar = document.getElementById("topbar");
+      if (screenName === "home") {
+        topbar.classList.remove("visible");
+      } else {
+        topbar.classList.add("visible");
+        updateStepPills(screenName);
+      }
+
+      if (screenName === "missions") renderMissionList();
+      if (screenName === "briefing") renderBriefing();
+      if (screenName === "builder") renderBuilder();
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function updateStepPills(activeStep) {
+      const order = ["missions", "briefing", "builder", "result"];
+      const activeIdx = order.indexOf(activeStep);
+      order.forEach((step, idx) => {
+        const pill = document.getElementById(`pill-${step}`);
+        pill.className = "step-pill";
+        if (idx < activeIdx) pill.classList.add("done");
+        if (idx === activeIdx) pill.classList.add("active");
+      });
+    }
+
+    // [화면 2] 미션 목록 렌더링
+    function renderMissionList() {
+      const listEl = document.getElementById("missionList");
+      listEl.innerHTML = missions.map((m, idx) => `
+        <button class="mission-card ${cleared[idx] ? "cleared" : ""}" onclick="selectMission(${idx})">
+          <div>
+            <div class="m-tag">${cleared[idx] ? "✓ 치료 설계 완료" : m.tag}</div>
+            <div class="m-title">${m.title}</div>
+            <div class="m-sub">${m.shortDesc}</div>
+          </div>
+          <div class="m-arrow">→</div>
         </button>
       `).join("");
+    }
 
-      // 표적 정보 그리기
+    function selectMission(idx) {
+      currentMission = idx;
+      goScreen("briefing");
+    }
+
+    // [화면 3] 표적 브리핑 렌더링
+    function renderBriefing() {
       const m = missions[currentMission];
-      document.getElementById("missionInfo").innerHTML = `
-        <div class="card-label">Target Analysis</div>
-        <div class="mission-title">${m.title}</div>
-        <p class="mission-desc">${m.desc}</p>
-        <div class="env-list">
-          ${m.env.map(e => `
-            <div class="env-item">
-              <span class="env-key">${e.k}</span>
-              <span class="env-val">${e.v}</span>
+      document.getElementById("briefingContent").innerHTML = `
+        <div class="m-tag">${m.tag}</div>
+        <h2 style="font-size:22px; font-weight:800; margin-bottom:10px;">${m.title}</h2>
+        <p style="font-size:15px; color:#334155;">${m.detailDesc}</p>
+
+        <div class="briefing-visual">
+          ${m.cellSVG}
+        </div>
+
+        <div class="cond-grid">
+          ${m.conditions.map(c => `
+            <div class="cond-box">
+              <div class="cond-label">${c.label}</div>
+              <div class="cond-val">${c.val}</div>
             </div>
           `).join("")}
         </div>
-      `;
 
-      // 3단 모듈 버튼 그리기
-      document.getElementById("builderGrid").innerHTML = `
-        <div class="module-col">
-          <h3>① 인식부 (항체·리간드)</h3>
-          ${renderOptions("head")}
-        </div>
-        <div class="module-col">
-          <h3>② 연결부 (링커·전달체)</h3>
-          ${renderOptions("linker")}
-        </div>
-        <div class="module-col">
-          <h3>③ 작용부 (탑재 약물)</h3>
-          ${renderOptions("payload")}
+        <div class="btn-group">
+          <button class="btn-secondary" onclick="goScreen('missions')">← 다른 미션 선택</button>
+          <button class="btn-primary" onclick="goScreen('builder')">치료제 모듈 조립하기 →</button>
         </div>
       `;
+    }
+
+    // [화면 4] 3단 조립 스튜디오 렌더링
+    function renderBuilder() {
+      const m = missions[currentMission];
+      document.getElementById("builderTitle").textContent = `${m.title} — 치료제 설계`;
+
+      const sections = [
+        { key: "head", title: "① 인식부 선택 (항체 · 표적 리간드)" },
+        { key: "linker", title: "② 연결부 선택 (환경 감응형 링커 · 전달체)" },
+        { key: "payload", title: "③ 작용부 선택 (탑재 치료 약물)" }
+      ];
+
+      document.getElementById("builderSections").innerHTML = sections.map(sec => `
+        <div class="builder-section">
+          <h3>${sec.title}</h3>
+          <div class="opt-row">
+            ${modules[sec.key].map(opt => `
+              <button class="opt-card ${selected[sec.key] === opt.id ? "selected" : ""}"
+                      onclick="pickModule('${sec.key}', '${opt.id}')">
+                <div class="opt-name">${opt.name}</div>
+                <div class="opt-info">${opt.desc}</div>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `).join("");
 
       renderSVG();
-      document.getElementById("reportCard").className = "report-card";
     }
 
-    function renderOptions(part) {
-      return modules[part].map(opt => `
-        <button class="option-btn ${selected[part] === opt.id ? "selected" : ""}"
-                onclick="selectPart('${part}', '${opt.id}')">
-          <div class="opt-title">${opt.name}</div>
-          <div class="opt-desc">${opt.desc}</div>
-        </button>
-      `).join("");
-    }
-
-    function selectPart(part, id) {
+    function pickModule(part, id) {
       selected[part] = id;
-      renderAll();
+      renderBuilder();
     }
 
-    // 4. 선택된 부품에 따라 SVG 그림 실시간 변경
     function renderSVG() {
       const hObj = modules.head.find(x => x.id === selected.head);
       const lObj = modules.linker.find(x => x.id === selected.linker);
       const pObj = modules.payload.find(x => x.id === selected.payload);
 
-      // 항체 머리 모양 SVG (삼각 / 사각 / 육각 홈)
       let headShape = "";
       if (selected.head === "tri") {
-        headShape = `<polygon points="30,30 85,55 30,80 48,55" fill="${hObj.color}" />`;
+        headShape = `<polygon points="30,25 85,50 30,75 48,50" fill="${hObj.color}" />`;
       } else if (selected.head === "sq") {
-        headShape = `<path d="M30,30 H80 V42 H55 V68 H80 V80 H30 Z" fill="${hObj.color}" />`;
+        headShape = `<path d="M30,25 H80 V37 H55 V63 H80 V75 H30 Z" fill="${hObj.color}" />`;
       } else {
-        headShape = `<polygon points="35,28 78,28 65,55 78,82 35,82 48,55" fill="${hObj.color}" />`;
+        headShape = `<polygon points="35,23 78,23 65,50 78,77 35,77 48,50" fill="${hObj.color}" />`;
       }
 
       document.getElementById("svgPreview").innerHTML = `
-        <svg width="260" height="110" viewBox="0 0 260 110">
-          <!-- 인식부(항체) -->
+        <svg width="260" height="96" viewBox="0 0 260 96">
           ${headShape}
-          <text x="55" y="102" font-size="10" font-weight="bold" text-anchor="middle" fill="#334155">인식부</text>
-
-          <!-- 연결부(링커) -->
-          <rect x="85" y="50" width="75" height="10" rx="5" fill="${lObj.color}" />
-          <text x="122" y="102" font-size="10" font-weight="bold" text-anchor="middle" fill="#334155">링커</text>
-
-          <!-- 작용부(약물) -->
-          <circle cx="195" cy="55" r="24" fill="${pObj.color}" />
-          <text x="195" y="59" font-size="10" font-weight="bold" text-anchor="middle" fill="#ffffff">DRUG</text>
-          <text x="195" y="102" font-size="10" font-weight="bold" text-anchor="middle" fill="#334155">작용부</text>
+          <text x="55" y="92" font-size="10" font-weight="bold" text-anchor="middle" fill="#475569">① 인식부</text>
+          <rect x="85" y="45" width="75" height="10" rx="5" fill="${lObj.color}" />
+          <text x="122" y="92" font-size="10" font-weight="bold" text-anchor="middle" fill="#475569">② 연결부</text>
+          <circle cx="195" cy="50" r="22" fill="${pObj.color}" />
+          <text x="195" y="54" font-size="10" font-weight="bold" text-anchor="middle" fill="#ffffff">DRUG</text>
+          <text x="195" y="92" font-size="10" font-weight="bold" text-anchor="middle" fill="#475569">③ 작용부</text>
         </svg>
       `;
 
       document.getElementById("previewCaption").textContent =
-        `[${hObj.name}] + [${lObj.name}] + [${pObj.name}]`;
+        `${hObj.name}  +  ${lObj.name}  +  ${pObj.name}`;
     }
 
-    // 5. 핵심 판정 로직: 3단계 생체 검증 시뮬레이션
+    // [화면 5] 시뮬레이션 판정 및 결과 화면 이동
     function runSimulation() {
       const m = missions[currentMission];
-      const report = document.getElementById("reportCard");
+      const s1 = selected.head === m.correct.head;
+      const s2 = selected.linker === m.correct.linker;
+      const s3 = selected.payload === m.correct.payload;
+      const allPass = s1 && s2 && s3;
 
-      const step1Pass = selected.head === m.correct.head;
-      const step2Pass = selected.linker === m.correct.linker;
-      const step3Pass = selected.payload === m.correct.payload;
-      const allPass = step1Pass && step2Pass && step3Pass;
+      if (allPass) cleared[currentMission] = true;
 
-      // 단계별 과학적 피드백 생성
-      const step1Msg = step1Pass
-        ? "표적 세포의 항원 입체 구조와 정확히 일치하여 정상 세포를 건드리지 않고 표적에만 결합했습니다."
-        : "항원-항체 입체 구조가 맞지 않아 표적 세포를 인식하지 못하거나 정상 세포에 오인 결합(부작용)했습니다.";
+      const msg1 = s1
+        ? "표적 세포의 고유 항원(또는 수용체) 구조와 정확히 일치하여 정상 세포 부작용 없이 표적에만 결합했습니다."
+        : "표적의 항원 입체 구조와 맞지 않아 표적 세포를 인식하지 못하거나 정상 세포에 오인 결합했습니다.";
 
-      const step2Msg = step2Pass
-        ? "혈액 이동 중에는 약물을 안전하게 붙잡고 있다가, 표적 미세환경 조건을 만나 정확히 약물을 방출했습니다."
-        : "표적의 미세환경(pH·지질장벽·특이효소)과 링커 특성이 맞지 않아 혈중에서 조기 유출되거나 세포 내부로 전달되지 못했습니다.";
+      const msg2 = s2
+        ? "혈류 이동 중에는 약물을 안전하게 보호하다가, 표적의 특수 미세환경(pH·장벽·효소)을 만나 정확히 방출되었습니다."
+        : "표적의 미세환경 조건과 전달체(링커) 특성이 맞지 않아 혈중에서 조기 유출되거나 세포 안으로 도달하지 못했습니다.";
 
-      const step3Msg = step3Pass
-        ? "표적 질환의 기전에 알맞은 약물이 방출되어 주변 정상 조직 손상 없이 치료 목표를 달성했습니다."
-        : "표적 도달에는 성공했으나, 질환의 기전(세포 사멸 vs 신호 억제)에 맞지 않는 약물이 탑재되어 치료 효과가 부족합니다.";
+      const msg3 = s3
+        ? "질환의 발병 기전에 알맞은 약물이 작용하여 주변 정상 조직 손상 없이 치료 목표를 완수했습니다."
+        : "표적 도달에는 성공했으나, 질환의 기전(세포 사멸 vs 신호 차단)에 맞지 않는 약물이 탑재되어 치료에 실패했습니다.";
 
-      if (allPass) {
-        cleared[currentMission] = true;
-        document.querySelectorAll(".tab-btn")[currentMission].classList.add("cleared");
-      }
-
-      report.className = `report-card ${allPass ? "success" : "fail"}`;
-      report.innerHTML = `
-        <h3 style="font-size:17px; font-weight:800; margin-bottom:10px;">
-          ${allPass ? "✅ 표적 치료 시뮬레이션 성공! (치료 창 최적화 달성)" : "⚠️ 시뮬레이션 실패 — 아래 단계별 원인을 수정하세요"}
-        </h3>
-        <div class="step-row">
-          <span class="step-badge ${step1Pass ? "pass" : "block"}">1단계: 항원 인식</span>
-          <span>${step1Msg}</span>
+      document.getElementById("resultContent").innerHTML = `
+        <div class="result-banner ${allPass ? "success" : "fail"}">
+          <h2>${allPass ? "🎉 표적 치료 시뮬레이션 성공!" : "⚠️ 치료 실패 — 설계 수정이 필요합니다"}</h2>
+          <p style="font-size:14.5px;">
+            ${allPass
+              ? "항원 특이적 인식과 미세환경 감응 방출 조건이 모두 일치해 최적의 치료 효과를 달성했습니다."
+              : "아래 3단계 검증 리포트에서 실패한 단계를 확인하고 부품을 다시 조합해 보세요."}
+          </p>
         </div>
-        <div class="step-row">
-          <span class="step-badge ${step2Pass ? "pass" : "block"}">2단계: 환경 감응 방출</span>
-          <span>${step2Msg}</span>
+
+        <div class="step-result-list">
+          <div class="step-result-item">
+            <div class="step-top">
+              <span class="step-name">1단계 · 항원-항체 특이적 인식</span>
+              <span class="${s1 ? "badge-pass" : "badge-fail"}">${s1 ? "성공" : "실패"}</span>
+            </div>
+            <p class="step-msg">${msg1}</p>
+          </div>
+
+          <div class="step-result-item">
+            <div class="step-top">
+              <span class="step-name">2단계 · 미세환경 감응형 전달 및 방출</span>
+              <span class="${s2 ? "badge-pass" : "badge-fail"}">${s2 ? "성공" : "실패"}</span>
+            </div>
+            <p class="step-msg">${msg2}</p>
+          </div>
+
+          <div class="step-result-item">
+            <div class="step-top">
+              <span class="step-name">3단계 · 표적 질환 약리 작용</span>
+              <span class="${s3 ? "badge-pass" : "badge-fail"}">${s3 ? "성공" : "실패"}</span>
+            </div>
+            <p class="step-msg">${msg3}</p>
+          </div>
         </div>
-        <div class="step-row">
-          <span class="step-badge ${step3Pass ? "pass" : "block"}">3단계: 약리 작용</span>
-          <span>${step3Msg}</span>
+
+        <div class="btn-group">
+          <button class="btn-secondary" onclick="goScreen('builder')">
+            ${allPass ? "← 조립 화면으로" : "← 부품 다시 설계하기"}
+          </button>
+          <button class="btn-primary" onclick="goScreen('missions')">
+            다른 미션 선택하기 →
+          </button>
         </div>
       `;
-    }
 
-    function changeMission(idx) {
-      currentMission = idx;
-      renderAll();
+      goScreen("result");
     }
-
-    renderAll();
   </script>
 </body>
 </html>
